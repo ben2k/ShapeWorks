@@ -161,3 +161,7 @@ INSTALL(TARGETS ReflectMesh RUNTIME DESTINATION bin)
 #ADD_EXECUTABLE(fea2vtk fea2vtk.cxx)
 #TARGET_LINK_LIBRARIES(fea2vtk ${ITK_LIBRARIES} Mesh tinyxml)
 #INSTALL(TARGETS fea2vtk RUNTIME DESTINATION bin)
+
+ADD_EXECUTABLE(WarpMeshUsingLandmarks WarpMeshUsingLandmarks.cxx )
+TARGET_LINK_LIBRARIES(WarpMeshUsingLandmarks ${ITK_LIBRARIES} Mesh tinyxml)
+INSTALL(TARGETS WarpMeshUsingLandmarks RUNTIME DESTINATION bin)
