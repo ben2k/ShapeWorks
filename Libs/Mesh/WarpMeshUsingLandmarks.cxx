@@ -5,6 +5,8 @@
 #include <fstream>
 #include <string>
 #include <stdio.h>
+#include "Eigen/Core"
+#include "Eigen/Dense"
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 
@@ -12,6 +14,7 @@ Eigen::MatrixXd Vref;
 Eigen::MatrixXd Vtemp;
 Eigen::MatrixXi Fref;
 Eigen::MatrixXd Vcontrol_static;
+Eigen::MatrixXd Vcontrol_moving;
 
 // void convertVTKtoOBJ(std::string inputFileName){
 
@@ -79,38 +82,40 @@ Eigen::MatrixXd Vcontrol_static;
 //     return v;
 // }
 
-// Eigen::MatrixXd pointReadFormat(std::string refPointPath, int numP){
-//   Eigen::MatrixXd Vout(numP, 3);
-//   std::ifstream inFile;
-//   inFile.open(refPointPath.c_str());
-//   int count = 0;
-//   while(!inFile.eof()){
-//     inFile >> Vout(count, 0) >> Vout(count, 1) >> Vout(count, 2);
-//     count++;
-//   }
-//   inFile.close();
-//   return Vout;
-// }
+Eigen::MatrixXd pointReadFormat(std::string refPointPath, int numP){
+  Eigen::MatrixXd Vout(numP, 3);
+  std::ifstream inFile;
+  inFile.open(refPointPath.c_str());
+  int count = 0;
+  while(!inFile.eof()){
+    inFile >> Vout(count, 0) >> Vout(count, 1) >> Vout(count, 2);
+    count++;
+  }
+  inFile.close();
+  return Vout;
+}
 
 int main(int argc, char *argv[])
 {
-    if (argc != 5)
+    if (argc != 6)
     {
-        std::cout << "Usage: " << argv[0] << " plyMeshFilePath inPointsPath outPointsPath outMeshFilePath" << std::endl;
+        std::cout << "Usage: " << argv[0] << " plyMeshFilePath inPointsPath  outMeshFilePath outPointsPath numParticles" << std::endl;
         return EXIT_FAILURE;
     }
     std::string inMesh  = std::string(argv[1]);
     std::string inPoint   = std::string(argv[2]);
-	std::string outMesh  = std::string(argv[1]);
-    std::string outPoint   = std::string(argv[2]);
+	std::string outMesh  = std::string(argv[3]);
+    std::string outPoint   = std::string(argv[4]);
+	int numP = atoi(argv[5]);
 
 	// read the points
-	Vcontrol_static = pointReadFormat(repPointpath, numParticles);
-	// Compute the Warp Matrix
+	Vcontrol_static = pointReadFormat(inPoint, numP);
+	Vcontrol_moving = pointReadFormat(outPoint, numP);
 
+	// Compute the Warp Matrix
 	
 	// Compute Transformation
-	
+	// Voutput = W * (Vcontrol_moving.rowwise() + RowVector3d(1,0,0));
 	// Save Output Mesh
 
     return 0;
