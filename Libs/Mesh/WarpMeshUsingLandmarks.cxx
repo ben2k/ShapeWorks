@@ -1,5 +1,5 @@
-#include "TriMesh.h"
-#include "meshFIM.h"
+// #include "TriMesh.h"
+// #include "meshFIM.h"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -9,6 +9,13 @@
 #include "Eigen/Dense"
 #include "itkImage.h"
 #include "itkImageFileReader.h"
+
+// VTK imports
+#include <vtkPolyData.h>
+#include <vtkPLYReader.h>
+#include <vtkSmartPointer.h>
+
+
 
 Eigen::MatrixXd Vref;
 Eigen::MatrixXd Vtemp;
@@ -112,6 +119,9 @@ int main(int argc, char *argv[])
 	Vcontrol_static = pointReadFormat(inPoint, numP);
 	Vcontrol_moving = pointReadFormat(outPoint, numP);
 
+	vtkSmartPointer<vtkPLYReader> reader =
+    vtkSmartPointer<vtkPLYReader>::New();
+  	reader->SetFileName ( inMesh.c_str() );
 	// Compute the Warp Matrix
 	
 	// Compute Transformation
