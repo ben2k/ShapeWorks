@@ -150,11 +150,13 @@ int main(int argc, char *argv[])
 	vtkSmartPointer<vtkIdList> cellIdList =
       vtkSmartPointer<vtkIdList>::New();
 	
-	// std::cout<<cellIdList->GetId(0)<<cellIdList->GetId(1)<<cellIdList->GetId(2)<<std::endl;
-	for(int j = 0; j < 10; j++){
+	for(int j = 0; j < numFaces; j++){
 		mesh->GetCellPoints(j, cellIdList);
-		std::cout<< cellIdList->GetId(0)<<", "<< cellIdList->GetId(1)<<", "<< cellIdList->GetId(2)<<std::endl;
+		Fref(j, 0) = cellIdList->GetId(0);
+		Fref(j, 1) = cellIdList->GetId(1);
+		Fref(j, 2) = cellIdList->GetId(2);
 	}
+	
 	// Compute the Warp Matrix
 	
 	// Compute Transformation
