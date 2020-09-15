@@ -19,7 +19,27 @@
 #include <vtkIdList.h>
 #include <vtkIdTypeArray.h>
 
-vector<Eigen::MatrixXd> W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen::MatrixXd TV, Eigen::MatrixXi TT, Eigen::MatrixXi TF){ 
+void point_mesh_squared_distance(
+  const Eigen::PlainObjectBase<DerivedP> & P,
+  const Eigen::PlainObjectBase<DerivedV> & V,
+  const Eigen::MatrixXi & Ele,
+  Eigen::PlainObjectBase<DerivedsqrD> & sqrD,
+  Eigen::PlainObjectBase<DerivedI> & I,
+  Eigen::PlainObjectBase<DerivedC> & C)
+{
+  const size_t dim = P.cols();
+  assert((dim == 2) && "P.cols() should be 2 -- needs a surface mesh");
+  assert(P.cols() == V.cols() && "P.cols() should equal V.cols()");
+    if(dim == 2){
+	  AABB<DerivedV,2> tree;
+      tree.init(V,Ele);
+      return tree.squared_distance(V,Ele,P,sqrD,I,C);
+    }
+  
+}
+////////////////// AABB IS THIS USED SOMEWHERE ELSE ????
+
+Eigen::MatrixXd W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen::MatrixXd TV, Eigen::MatrixXi TF){ 
 
     vector<Eigen::MatrixXd> v;
     Eigen::MatrixXd W;
@@ -41,10 +61,8 @@ vector<Eigen::MatrixXd> W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen:
     igl::matrix_to_list(b,S);
     std::cout<<"Computing weights for "<<b.size()<<
       " handles at "<<TV.rows()<<" vertices..."<<std::endl;
-    // Technically k should equal 3 for smooth interpolation in 3d, but 2 is
-    // faster and looks OK
     const int k = 2;
-    igl::biharmonic_coordinates(TV,TT,S,k,W);
+    igl::biharmonic_coordinates(TV,TF,S,k,W);
     std::cout<<"Reindexing..."<< std::endl;
     std::cout << W.rows() << " " << W.cols() << std::endl;
     // Throw away interior tet-vertices, keep weights and indices of boundary
@@ -55,9 +73,9 @@ vector<Eigen::MatrixXd> W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen:
     igl::slice(Eigen::MatrixXd(TV),J,1,TV);
     igl::slice(Eigen::MatrixXd(W),J,1,W);
     std::cout << "It's done!!" << std::endl;
-    v.push_back(W);
-    v.push_back(Vcontrol_static);
-    return v;
+    // v.push_back(W);
+    // v.push_back(Vcontrol_static);
+    return W;
 }
 
 Eigen::MatrixXd pointReadFormat(std::string refPointPath, int numP){
@@ -128,7 +146,9 @@ int main(int argc, char *argv[])
 	}
 	
 	// Compute the Warp Matrix
-	
+	TV = Vref;
+  	TF = Fref;
+  	TT = TF;  
 	// Compute Transformation
 	// Voutput = W * (Vcontrol_moving.rowwise() + RowVector3d(1,0,0));
 	// Save Output Mesh
