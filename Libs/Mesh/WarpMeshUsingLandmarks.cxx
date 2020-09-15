@@ -14,12 +14,14 @@
 #include <vtkPolyData.h>
 #include <vtkPLYReader.h>
 #include <vtkSmartPointer.h>
+#include <vtkDataArray.h>
+#include <vtkPoints.h>
+#include <vtkIdList.h>
+#include <vtkIdTypeArray.h>
 
 
 
-Eigen::MatrixXd Vref;
-Eigen::MatrixXd Vtemp;
-Eigen::MatrixXi Fref;
+
 Eigen::MatrixXd Vcontrol_static;
 Eigen::MatrixXd Vcontrol_moving;
 
@@ -122,6 +124,37 @@ int main(int argc, char *argv[])
 	vtkSmartPointer<vtkPLYReader> reader =
     vtkSmartPointer<vtkPLYReader>::New();
   	reader->SetFileName ( inMesh.c_str() );
+	reader->Update();
+
+	// convert the VTK IO into Eigen Matrices
+	
+
+	vtkSmartPointer<vtkPolyData> mesh = reader->GetOutput();
+
+	vtkSmartPointer<vtkPoints> points = mesh->GetPoints();
+	vtkSmartPointer<vtkDataArray> dataArray = points->GetData();
+	int numVertices = points->GetNumberOfPoints();
+	int numFaces = mesh->GetNumberOfCells();
+	
+	Eigen::MatrixXd Vref(numVertices, 3);
+	Eigen::MatrixXi Fref(numFaces, 3);
+
+	std::cout << points->GetNumberOfPoints() << "  " << mesh->GetNumberOfCells() <<std::endl;
+	for(int i=0; i<numVertices;i++){
+		Vref(i, 0) = dataArray->GetComponent(i, 0);
+		Vref(i, 1) = dataArray->GetComponent(i, 1);
+		Vref(i, 2) = dataArray->GetComponent(i, 2);
+	}
+	vtkIdType cellId = 0;
+
+	vtkSmartPointer<vtkIdList> cellIdList =
+      vtkSmartPointer<vtkIdList>::New();
+	
+	// std::cout<<cellIdList->GetId(0)<<cellIdList->GetId(1)<<cellIdList->GetId(2)<<std::endl;
+	for(int j = 0; j < 10; j++){
+		mesh->GetCellPoints(j, cellIdList);
+		std::cout<< cellIdList->GetId(0)<<", "<< cellIdList->GetId(1)<<", "<< cellIdList->GetId(2)<<std::endl;
+	}
 	// Compute the Warp Matrix
 	
 	// Compute Transformation
