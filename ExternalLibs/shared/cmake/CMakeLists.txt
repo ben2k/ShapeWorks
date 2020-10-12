@@ -44,45 +44,43 @@ endif()
 
 ### macro definition ###
 set(LIBIGL_ROOT "${PROJECT_SOURCE_DIR}/../..")
-set(LIBIGL_SOURCE_DIR "${LIBIGL_ROOT}/include")
-set(LIBIGL_EXTERNAL "${LIBIGL_ROOT}")
 
 ### Eigen ###
-set(EIGEN_INCLUDE_DIR "${LIBIGL_EXTERNAL}/nanogui/ext/eigen")
+set(EIGEN_INCLUDE_DIR "${LIBIGL_ROOT}/nanogui/ext/eigen")
 list(APPEND LIBIGL_INCLUDE_DIRS "${EIGEN_INCLUDE_DIR}")
 
 macro(CompileIGL_Module module)
   file(GLOB SOURCES_IGL_${module}
-  "${LIBIGL_SOURCE_DIR}/igl/${module}/*.cpp"
+  "${LIBIGL_ROOT}/igl/${module}/*.cpp"
   )
   add_library(igl${module} STATIC ${SOURCES_IGL_${module}})
   target_include_directories(igl${module} PRIVATE ${EIGEN_INCLUDE_DIR})
-  target_include_directories(igl${module} PRIVATE ${LIBIGL_SOURCE_DIR})
+  target_include_directories(igl${module} PRIVATE ${LIBIGL_ROOT})
   target_compile_definitions(igl${module} PRIVATE -DIGL_STATIC_LIBRARY)
   list(APPEND LIBIGL_LIBRARIES "igl${module}")
 endmacro()
 
 macro(CompileIGL_Module_Copyleft module)
   file(GLOB SOURCES_IGL_${module}
-  "${LIBIGL_SOURCE_DIR}/igl/copyleft/${module}/*.cpp"
+  "${LIBIGL_ROOT}/igl/copyleft/${module}/*.cpp"
   )
   add_library(igl${module} STATIC ${SOURCES_IGL_${module}})
   target_include_directories(igl${module} PRIVATE ${EIGEN_INCLUDE_DIR})
-  target_include_directories(igl${module} PRIVATE ${LIBIGL_SOURCE_DIR})
+  target_include_directories(igl${module} PRIVATE ${LIBIGL_ROOT})
   target_compile_definitions(igl${module} PRIVATE -DIGL_STATIC_LIBRARY)
   list(APPEND LIBIGL_LIBRARIES "igl${module}")
 endmacro()
 
 
 ### IGL Common ###
-list(APPEND LIBIGL_INCLUDE_DIRS "${LIBIGL_SOURCE_DIR}")
+list(APPEND LIBIGL_INCLUDE_DIRS "${LIBIGL_ROOT}")
 if(LIBIGL_USE_STATIC_LIBRARY)
   file(GLOB SOURCES_IGL
-  "${LIBIGL_SOURCE_DIR}/igl/*.cpp"
-  "${LIBIGL_SOURCE_DIR}/igl/copyleft/*.cpp")
+  "${LIBIGL_ROOT}/igl/*.cpp"
+  "${LIBIGL_ROOT}/igl/copyleft/*.cpp")
   add_library(igl STATIC ${SOURCES_IGL})
   target_include_directories(igl PRIVATE ${EIGEN_INCLUDE_DIR})
-  target_include_directories(igl PRIVATE ${LIBIGL_SOURCE_DIR})
+  target_include_directories(igl PRIVATE ${LIBIGL_ROOT})
   target_compile_definitions(igl PRIVATE -DIGL_STATIC_LIBRARY)
   list(APPEND LIBIGL_LIBRARIES "igl")
 endif()
@@ -116,15 +114,15 @@ if(LIBIGL_WITH_OPENGL)
     CompileIGL_Module("opengl")
     CompileIGL_Module("opengl2")
     if(NOT APPLE)
-      target_include_directories(iglopengl PRIVATE "${LIBIGL_EXTERNAL}/nanogui/ext/glew/include")
-      target_include_directories(iglopengl2 PRIVATE "${LIBIGL_EXTERNAL}/nanogui/ext/glew/include")
+      target_include_directories(iglopengl PRIVATE "${LIBIGL_ROOT}/nanogui/ext/glew/include")
+      target_include_directories(iglopengl2 PRIVATE "${LIBIGL_ROOT}/nanogui/ext/glew/include")
     endif()
   endif()
 endif()
 
 ### Compile the tetgen part ###
 if(LIBIGL_WITH_TETGEN)
-  set(TETGEN_DIR "${LIBIGL_EXTERNAL}/tetgen")
+  set(TETGEN_DIR "${LIBIGL_ROOT}/tetgen")
   add_subdirectory("${TETGEN_DIR}" "tetgen")
   list(APPEND LIBIGL_INCLUDE_DIRS ${TETGEN_DIR})
   list(APPEND LIBIGL_TETGEN_EXTRA_LIBRARIES "tetgen")
@@ -138,7 +136,7 @@ endif()
 
 ### Compile the viewer ###
 if(LIBIGL_WITH_VIEWER)
-  set(NANOGUI_DIR "${LIBIGL_EXTERNAL}/nanogui")
+  set(NANOGUI_DIR "${LIBIGL_ROOT}/nanogui")
 
   if(LIBIGL_WITH_NANOGUI)
     list(APPEND LIBIGL_DEFINITIONS "-DIGL_VIEWER_WITH_NANOGUI")
