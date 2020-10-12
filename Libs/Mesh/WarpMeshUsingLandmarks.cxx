@@ -20,16 +20,15 @@
 #include <vtkIdTypeArray.h>
 
 // IGL dependencies
-#include <igl/biharmonic_coordinates.h>
-#include <igl/cat.h>
-#include <igl/cotmatrix.h>
-#include <igl/matrix_to_list.h>
-#include <igl/copyleft/tetgen/tetrahedralize.h>
-#include <igl/point_mesh_squared_distance.h>
-#include <igl/readOBJ.h>
-#include <igl/remove_unreferenced.h>
-#include <igl/slice.h>
-#include <igl/viewer/Viewer.h>
+#include <ExternalLibs/igl/biharmonic_coordinates.h>
+#include <ExternalLibs/igl/cat.h>
+#include <ExternalLibs/igl/cotmatrix.h>
+#include <ExternalLibs/igl/matrix_to_list.h>
+#include <ExternalLibs/igl/copyleft/tetgen/tetrahedralize.h>
+#include <ExternalLibs/igl/point_mesh_squared_distance.h>
+#include <ExternalLibs/igl/readOBJ.h>
+#include <ExternalLibs/igl/remove_unreferenced.h>
+#include <ExternalLibs/igl/slice.h>
 
 Eigen::MatrixXd W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen::MatrixXd TV, Eigen::MatrixXi TT, Eigen::MatrixXi TF){ 
 
