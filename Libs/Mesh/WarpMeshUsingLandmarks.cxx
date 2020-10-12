@@ -19,6 +19,18 @@
 #include <vtkIdList.h>
 #include <vtkIdTypeArray.h>
 
+// IGL dependencies
+#include <igl/biharmonic_coordinates.h>
+#include <igl/cat.h>
+#include <igl/cotmatrix.h>
+#include <igl/matrix_to_list.h>
+#include <igl/copyleft/tetgen/tetrahedralize.h>
+#include <igl/point_mesh_squared_distance.h>
+#include <igl/readOBJ.h>
+#include <igl/remove_unreferenced.h>
+#include <igl/slice.h>
+#include <igl/viewer/Viewer.h>
+
 Eigen::MatrixXd W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen::MatrixXd TV, Eigen::MatrixXi TT, Eigen::MatrixXi TF){ 
 
     Eigen::MatrixXd W;
@@ -125,13 +137,14 @@ int main(int argc, char *argv[])
 	}
 	
 	// Compute the Warp Matrix
-	TV = Vref;
-  	TF = Fref;
-  	TT = TF;  
-	Eigen::MatrixXd W = W_precomputation(Vcontrol_static, TV, TT, TF);	  
-	// Compute Transformation
-	Voutput = W * (Vcontrol_moving.rowwise() + RowVector3d(1,0,0));
-	// Save Output Mesh
-	
+	Eigen::MatrixXd TV = Vref;
+  	Eigen::MatrixXi TF = Fref;
+  	Eigen::MatrixXi TT = TF;  
+
+	// Eigen::MatrixXd W = W_precomputation(Vcontrol_static, TV, TT, TF);	  
+	// // Compute Transformation
+	// Voutput = W * (Vcontrol_moving.rowwise() + RowVector3d(1,0,0));
+	// // Save Output Mesh
+
     return 0;
 }
