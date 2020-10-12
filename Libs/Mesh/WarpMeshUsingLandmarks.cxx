@@ -19,9 +19,8 @@
 #include <vtkIdList.h>
 #include <vtkIdTypeArray.h>
 
-vector<Eigen::MatrixXd> W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen::MatrixXd TV, Eigen::MatrixXi TT, Eigen::MatrixXi TF){ 
+Eigen::MatrixXd W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen::MatrixXd TV, Eigen::MatrixXi TT, Eigen::MatrixXi TF){ 
 
-    vector<Eigen::MatrixXd> v;
     Eigen::MatrixXd W;
     Eigen::VectorXi b;
     {
@@ -55,9 +54,7 @@ vector<Eigen::MatrixXd> W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen:
     igl::slice(Eigen::MatrixXd(TV),J,1,TV);
     igl::slice(Eigen::MatrixXd(W),J,1,W);
     std::cout << "It's done!!" << std::endl;
-    v.push_back(W);
-    v.push_back(Vcontrol_static);
-    return v;
+    return W;
 }
 
 Eigen::MatrixXd pointReadFormat(std::string refPointPath, int numP){
@@ -131,9 +128,10 @@ int main(int argc, char *argv[])
 	TV = Vref;
   	TF = Fref;
   	TT = TF;  
+	Eigen::MatrixXd W = W_precomputation(Vcontrol_static, TV, TT, TF);	  
 	// Compute Transformation
-	// Voutput = W * (Vcontrol_moving.rowwise() + RowVector3d(1,0,0));
+	Voutput = W * (Vcontrol_moving.rowwise() + RowVector3d(1,0,0));
 	// Save Output Mesh
-
+	
     return 0;
 }
