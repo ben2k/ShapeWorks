@@ -298,7 +298,7 @@ build_igl()
   cmake ..
   make -j${NUM_PROCS} install || exit 1
 
-  Libigl_DIR=${INSTALL_DIR}/share/libigl/cmake/
+  Libigl_DIR=${INSTALL_DIR}/share/libigl/cmake/ 
 }
 
 show_shapeworks_build()
