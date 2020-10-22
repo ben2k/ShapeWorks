@@ -286,19 +286,19 @@ build_igl()
   #     CONCURRENT_FLAG="-DCONCURRENT_MALLOC=None"
   # fi
   
-  # if [[ $OSTYPE == "msys" ]]; then
-  #     cmake -DUSE_BLOSC=OFF -DCMAKE_PREFIX_PATH=${CONDA_PREFIX} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} ..
-  #     cmake --build . --config Release || exit 1
-  #     cmake --build . --config Release --target install
-  # else
-  #     cmake -DUSE_BLOSC=OFF ${CONCURRENT_FLAG} -DCMAKE_PREFIX_PATH=${CONDA_PREFIX} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DCMAKE_INSTALL_LIBDIR=lib ..
-  #     make -j${NUM_PROCS} install || exit 1
-  # fi
+  if [[ $OSTYPE == "msys" ]]; then
+      cmake -DUSE_BLOSC=OFF -DCMAKE_PREFIX_PATH=${CONDA_PREFIX} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DCMAKE_INSTALL_LIBDIR=lib ..
+      cmake --build . --config Release || exit 1
+      cmake --build . --config Release --target install
+  else
+      cmake -DBUILD_TESTING:BOOL=OFF  -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DCMAKE_INSTALL_LIBDIR=lib ..
+      make -j${NUM_PROCS} install || exit 1
+  fi
 
   cmake ..
   make -j${NUM_PROCS} install || exit 1
 
-  Libigl_DIR=${INSTALL_DIR}/lib64/cmake/OpenVDB/
+  Libigl_DIR=${INSTALL_DIR}/share/libigl/cmake/
 }
 
 show_shapeworks_build()
@@ -353,6 +353,10 @@ build_all()
   mkdir -p ${INSTALL_DIR}
 
   ## build dependencies if their locations were not specified
+  if [[ -z $Libigl_DIR ]]; then
+    build_igl
+  fi
+
   if [[ -z $OpenVDB_DIR ]]; then
     build_openvdb
   fi
@@ -385,6 +389,7 @@ build_all()
   echo "  ITK_DIR: ${ITK_DIR}"
   echo "  EIGEN_DIR: ${EIGEN_DIR}"
   echo "  OpenVDB_DIR: ${OpenVDB_DIR}"
+  echo "  Libigl_DIR: ${Libigl_DIR}"
   echo ""
   
   show_shapeworks_build
