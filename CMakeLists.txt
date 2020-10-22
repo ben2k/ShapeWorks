@@ -121,6 +121,9 @@ ENDIF()
 ### Eigen
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
+### Libigl
+
+find_package(libigl REQUIRED NO_MODULE)
 ### XLNT
 find_package (XLNT REQUIRED)
 
