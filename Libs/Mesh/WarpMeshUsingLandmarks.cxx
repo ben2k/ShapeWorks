@@ -21,52 +21,53 @@
 
 
 // IGL dependencies
-#include <ExternalLibs/igl/biharmonic_coordinates.h>
-#include <ExternalLibs/igl/cat.h>
-#include <ExternalLibs/igl/cotmatrix.h>
-#include <ExternalLibs/igl/matrix_to_list.h>
-#include <ExternalLibs/igl/point_mesh_squared_distance.h>
-#include <ExternalLibs/igl/readOBJ.h>
-#include <ExternalLibs/igl/remove_unreferenced.h>
-#include <ExternalLibs/igl/slice.h>
+#include "igl/biharmonic_coordinates.h"
+// #include <ExternalLibs/igl/biharmonic_coordinates.h>
+// #include <ExternalLibs/igl/cat.h>
+// #include <ExternalLibs/igl/cotmatrix.h>
+// #include <ExternalLibs/igl/matrix_to_list.h>
+// #include <ExternalLibs/igl/point_mesh_squared_distance.h>
+// #include <ExternalLibs/igl/readOBJ.h>
+// #include <ExternalLibs/igl/remove_unreferenced.h>
+// #include <ExternalLibs/igl/slice.h>
 
-Eigen::MatrixXd W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen::MatrixXd TV, Eigen::MatrixXi TT, Eigen::MatrixXi TF){ 
+// Eigen::MatrixXd W_precomputation(Eigen::MatrixXd Vcontrol_static, Eigen::MatrixXd TV, Eigen::MatrixXi TT, Eigen::MatrixXi TF){ 
 
-    Eigen::MatrixXd W;
-    Eigen::VectorXi b;
-	{
-		Eigen::VectorXi J = Eigen::VectorXi::LinSpaced(TV.rows(),0,TV.rows()-1);
-		Eigen::VectorXd sqrD;
-		Eigen::MatrixXd _2;
-		std::cout<<"Finding closest points..."<<std::endl;
-		igl::point_mesh_squared_distance(Vcontrol_static,TV,J,sqrD,b,_2);
-		assert(sqrD.minCoeff() < 1e-7 && "low.V should exist in high.V");
-	}
-    // // force perfect positioning, rather have popping in low-res than high-res.
-    // // The correct/elaborate thing to do is express original low.V in terms of
-    // // linear interpolation (or extrapolation) via elements in (high.V,high.F)
-    igl::slice(TV,b,1,Vcontrol_static);
-    // // list of points --> list of singleton lists
-    std::vector<std::vector<int> > S;
-    igl::matrix_to_list(b,S);
-    std::cout<<"Computing weights for "<<b.size()<<
-      " handles at "<<TV.rows()<<" vertices..."<<std::endl;
-    // // Technically k should equal 3 for smooth interpolation in 3d, but 2 is
-    // // faster and looks OK
-    const int k = 2;
-    igl::biharmonic_coordinates(TV,TT,S,k,W);
-    std::cout<<"Reindexing..."<< std::endl;
-    std::cout << W.rows() << " " << W.cols() << std::endl;
-    // // Throw away interior tet-vertices, keep weights and indices of boundary
-    Eigen::VectorXi I,J;
-    igl::remove_unreferenced(TV.rows(),TF,I,J);
-    std::for_each(TF.data(),TF.data()+TF.size(),[&I](int & a){a=I(a);});
-    std::for_each(b.data(),b.data()+b.size(),[&I](int & a){a=I(a);});
-    igl::slice(Eigen::MatrixXd(TV),J,1,TV);
-    igl::slice(Eigen::MatrixXd(W),J,1,W);
-    std::cout << "It's done!!" << std::endl;
-    return W;
-}
+//     Eigen::MatrixXd W;
+//     Eigen::VectorXi b;
+// 	{
+// 		Eigen::VectorXi J = Eigen::VectorXi::LinSpaced(TV.rows(),0,TV.rows()-1);
+// 		Eigen::VectorXd sqrD;
+// 		Eigen::MatrixXd _2;
+// 		std::cout<<"Finding closest points..."<<std::endl;
+// 		igl::point_mesh_squared_distance(Vcontrol_static,TV,J,sqrD,b,_2);
+// 		assert(sqrD.minCoeff() < 1e-7 && "low.V should exist in high.V");
+// 	}
+//     // // force perfect positioning, rather have popping in low-res than high-res.
+//     // // The correct/elaborate thing to do is express original low.V in terms of
+//     // // linear interpolation (or extrapolation) via elements in (high.V,high.F)
+//     igl::slice(TV,b,1,Vcontrol_static);
+//     // // list of points --> list of singleton lists
+//     std::vector<std::vector<int> > S;
+//     igl::matrix_to_list(b,S);
+//     std::cout<<"Computing weights for "<<b.size()<<
+//       " handles at "<<TV.rows()<<" vertices..."<<std::endl;
+//     // // Technically k should equal 3 for smooth interpolation in 3d, but 2 is
+//     // // faster and looks OK
+//     const int k = 2;
+//     igl::biharmonic_coordinates(TV,TT,S,k,W);
+//     std::cout<<"Reindexing..."<< std::endl;
+//     std::cout << W.rows() << " " << W.cols() << std::endl;
+//     // // Throw away interior tet-vertices, keep weights and indices of boundary
+//     Eigen::VectorXi I,J;
+//     igl::remove_unreferenced(TV.rows(),TF,I,J);
+//     std::for_each(TF.data(),TF.data()+TF.size(),[&I](int & a){a=I(a);});
+//     std::for_each(b.data(),b.data()+b.size(),[&I](int & a){a=I(a);});
+//     igl::slice(Eigen::MatrixXd(TV),J,1,TV);
+//     igl::slice(Eigen::MatrixXd(W),J,1,W);
+//     std::cout << "It's done!!" << std::endl;
+//     return W;
+// }
 
 Eigen::MatrixXd pointReadFormat(std::string refPointPath, int numP){
   Eigen::MatrixXd Vout(numP, 3);
@@ -140,9 +141,9 @@ int main(int argc, char *argv[])
   	Eigen::MatrixXi TF = Fref;
   	Eigen::MatrixXi TT = TF;  
 
-	Eigen::MatrixXd W = W_precomputation(Vcontrol_static, TV, TT, TF);	  
-	// // Compute Transformation
-	Eigen::MatrixXd Voutput = W * (Vcontrol_moving.rowwise() + Eigen::RowVector3d(1,0,0));
+	// Eigen::MatrixXd W = W_precomputation(Vcontrol_static, TV, TT, TF);	  
+	// // // Compute Transformation
+	// Eigen::MatrixXd Voutput = W * (Vcontrol_moving.rowwise() + Eigen::RowVector3d(1,0,0));
 	// // Save Output Mesh
 	return 0;
 }
