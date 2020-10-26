@@ -21,8 +21,8 @@
 
 
 // IGL dependencies
-#include "igl/biharmonic_coordinates.h"
-// #include <ExternalLibs/igl/biharmonic_coordinates.h>
+// #include "../../dependencies2/build/libigl/include/igl/biharmonic_coordinates.h"
+#include <igl/biharmonic_coordinates.h>
 // #include <ExternalLibs/igl/cat.h>
 // #include <ExternalLibs/igl/cotmatrix.h>
 // #include <ExternalLibs/igl/matrix_to_list.h>
