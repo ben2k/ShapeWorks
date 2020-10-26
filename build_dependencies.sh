@@ -279,7 +279,7 @@ build_igl()
 
   if [[ $BUILD_CLEAN = 1 ]]; then rm -rf build; fi
   mkdir -p build && cd build
-
+  igl_eigen_dir=${INSTALL_DIR}/share/eigen3/cmake/
   # CONCURRENT_FLAG=""
   # if [ "$(uname)" == "Darwin" ]; then
   #     # There is an incompatibility between Qt and tbbmalloc_proxy on Mac
@@ -291,7 +291,7 @@ build_igl()
       cmake --build . --config Release || exit 1
       cmake --build . --config Release --target install
   else
-      cmake -DBUILD_TESTING:BOOL=OFF  -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DCMAKE_INSTALL_LIBDIR=lib ..
+      cmake -DBUILD_TESTING:BOOL=OFF  -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DEigen3_DIR=${igl_eigen_dir} -DHUNTER_ENABLED:BOOL=ON -DLIBIGL_WITH_COMISO:BOOL=OFF..
       make -j${NUM_PROCS} install || exit 1
   fi
 
@@ -353,9 +353,7 @@ build_all()
   mkdir -p ${INSTALL_DIR}
 
   ## build dependencies if their locations were not specified
-  if [[ -z $Libigl_DIR ]]; then
-    build_igl
-  fi
+  
 
   if [[ -z $OpenVDB_DIR ]]; then
     build_openvdb
@@ -372,9 +370,13 @@ build_all()
   if [[ -z $ITK_DIR ]]; then
     build_itk
   fi
-
+  
   if [[ -z $EIGEN_DIR ]]; then
     build_eigen
+  fi
+
+  if [[ -z $Libigl_DIR ]]; then
+    build_igl
   fi
 
   if [[ -z $XLNT_DIR ]]; then

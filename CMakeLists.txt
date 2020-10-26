@@ -118,11 +118,11 @@ ELSE()
   MESSAGE(SEND_ERROR "ITK (The Insight Toolkit) is required, but could not be found! Make sure path to ITKConfig.cmake is included in CMAKE_PREFIX_PATH")
 ENDIF()
 
-### Libigl
-find_package (libigl REQUIRED)
-
 ### Eigen
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+
+### Libigl
+find_package (libigl REQUIRED QUIET)
 
 ### XLNT
 find_package (XLNT REQUIRED)
