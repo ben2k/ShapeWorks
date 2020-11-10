@@ -22,10 +22,22 @@ int main(int argc, char** argv)
 {
   try {
     STUDIO_LOG_MESSAGE("ShapeWorksStudio initializing...");
-
-
+    
     // needed to ensure appropriate OpenGL context is created for VTK rendering.
-    QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
+    QSurfaceFormat fmt;
+    fmt.setRenderableType(QSurfaceFormat::OpenGL);
+    fmt.setVersion(3, 2);
+    fmt.setProfile(QSurfaceFormat::CoreProfile);
+    fmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+    fmt.setRedBufferSize(8);
+    fmt.setGreenBufferSize(8);
+    fmt.setBlueBufferSize(8);
+    fmt.setDepthBufferSize(8);
+    fmt.setAlphaBufferSize(8);
+    fmt.setStencilBufferSize(0);
+    fmt.setStereo(false);
+    fmt.setSamples(0);
+    QSurfaceFormat::setDefaultFormat(fmt);
 
 #ifdef _WIN32
     QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
