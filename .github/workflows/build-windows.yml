@@ -38,7 +38,7 @@ jobs:
       
     - name: Cache Qt
       id: cache-qt
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ../Qt
         key: QtCache-windows
@@ -64,7 +64,7 @@ jobs:
 
     - name: Cache dependencies
       id: cache-dependencies
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: "C:\\deps"
         key: ${{ runner.os }}d-${{ hashFiles('**/build_dependencies.sh') }}
