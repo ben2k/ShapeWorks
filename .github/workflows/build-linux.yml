@@ -25,7 +25,13 @@ jobs:
 
     - name: disk space check
       run: df -h
-    
+
+    - name: Free up some disk space
+      run: sudo rm -rf /usr/share/dotnet
+
+    - name: disk space check
+      run: df -h
+      
     - name: Choose gcc 9
       run: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9
 
