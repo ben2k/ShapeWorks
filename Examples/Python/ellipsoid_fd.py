@@ -16,6 +16,7 @@ import shapeworks as sw
 import OptimizeUtils
 import AnalyzeUtils
 
+
 def Run_Pipeline(args):
     print("\nStep 1. Extract Data\n")
     """
@@ -30,10 +31,14 @@ def Run_Pipeline(args):
         os.makedirs(output_directory)
     sw.data.download_and_unzip_dataset(dataset_name, output_directory)
 
-    file_list_dts = sorted(glob.glob(
-        output_directory + dataset_name + "/groomed/distance_transforms/*.nrrd"))
+    file_list_dts = sorted(
+        glob.glob(
+            output_directory + dataset_name + "/groomed/distance_transforms/*.nrrd"
+        )
+    )
     file_list_new_segs = sorted(
-        glob.glob(output_directory + dataset_name + "/fd_segmentations/*.nrrd"))
+        glob.glob(output_directory + dataset_name + "/fd_segmentations/*.nrrd")
+    )
 
     print("\nStep 2. Groom - Create distance transforms\n")
     """
@@ -47,7 +52,7 @@ def Run_Pipeline(args):
     """
 
     # Create a directory for groomed output
-    groom_dir = output_directory + 'groomed/'
+    groom_dir = output_directory + "groomed/"
     if not os.path.exists(groom_dir):
         os.makedirs(groom_dir)
 
@@ -72,19 +77,26 @@ def Run_Pipeline(args):
     shape_names = []
     # Loop over segs and compute smooth DT
     for shape_filename in file_list_new_segs:
-        print('Loading: ' + shape_filename)
+        print("Loading: " + shape_filename)
         # get current shape name
-        shape_name = shape_filename.split('/')[-1].replace('.nrrd', '')
+        shape_name = shape_filename.split("/")[-1].replace(".nrrd", "")
         shape_names.append(shape_name)
         # load segmentation
         shape_seg = sw.Image(shape_filename)
-        print('Compute DT for segmentation: ' + shape_name)
-        shape_seg.antialias(antialias_iterations).computeDT(
-            iso_value).gaussianBlur(sigma)
+        print("Compute DT for segmentation: " + shape_name)
+        shape_seg.antialias(antialias_iterations).computeDT(iso_value).gaussianBlur(
+            sigma
+        )
         dt_list.append(shape_seg)
     # Save distance transforms
-    new_dt_files = sw.utils.save_images(groom_dir + 'distance_transforms/', dt_list,
-                                        shape_names, extension='nrrd', compressed=False, verbose=True)
+    new_dt_files = sw.utils.save_images(
+        groom_dir + "distance_transforms/",
+        dt_list,
+        shape_names,
+        extension="nrrd",
+        compressed=False,
+        verbose=True,
+    )
     # Get list of original and new distance transforms
     dt_files = file_list_dts + new_dt_files
 
@@ -100,7 +112,7 @@ def Run_Pipeline(args):
     """
 
     # Make directory to save optimization output
-    point_dir = output_directory + 'shape_models/'
+    point_dir = output_directory + "shape_models/"
     if not os.path.exists(point_dir):
         os.makedirs(point_dir)
 
@@ -110,7 +122,7 @@ def Run_Pipeline(args):
     """
     shape_model_dir = output_directory + dataset_name + "/shape_models/ellipsoid/128/"
     OptimizeUtils.findMeanShape(shape_model_dir)
-    mean_shape_path = shape_model_dir + '/meanshape_local.particles'
+    mean_shape_path = shape_model_dir + "/meanshape_local.particles"
 
     # Create a dictionary for all the parameters required by optimization
     parameter_dictionary = {
@@ -125,7 +137,7 @@ def Run_Pipeline(args):
         "ending_regularization": 0.1,
         "recompute_regularization_interval": 2,
         "domains_per_shape": 1,
-        "domain_type": 'image',
+        "domain_type": "image",
         "relative_weighting": 15,
         "initial_relative_weighting": 0.05,
         "procrustes_interval": 0,
@@ -138,8 +150,12 @@ def Run_Pipeline(args):
     }
 
     # Execute the optimization function
-    [local_point_files, world_point_files] = OptimizeUtils.runShapeWorksOptimize_FixedDomains(
-        point_dir, dt_files, parameter_dictionary)
+    [
+        local_point_files,
+        world_point_files,
+    ] = OptimizeUtils.runShapeWorksOptimize_FixedDomains(
+        point_dir, dt_files, parameter_dictionary
+    )
 
     if args.tiny_test:
         print("Done with tiny test")
@@ -152,6 +168,9 @@ def Run_Pipeline(args):
     For more information about the analysis step, see docs/workflow/analyze.md
     http://sciinstitute.github.io/ShapeWorks/workflow/analyze.html
     """
-    print("\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n")
+    print(
+        "\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n"
+    )
     AnalyzeUtils.launchShapeWorksStudio(
-        point_dir, dt_files, local_point_files, world_point_files)
+        point_dir, dt_files, local_point_files, world_point_files
+    )

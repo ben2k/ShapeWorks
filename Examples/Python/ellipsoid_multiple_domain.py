@@ -16,6 +16,7 @@ import shapeworks as sw
 import OptimizeUtils
 import AnalyzeUtils
 
+
 def Run_Pipeline(args):
     print("\nStep 1. Extract Data\n")
     """
@@ -25,45 +26,47 @@ def Run_Pipeline(args):
     the portal and the directory to save output from the use case in. 
     """
     print("\nDataset options for running multiple domain use case: \n")
-    print("1. ellipsoid_joint_rotation \t 2. ellipsoid_joint_size \t 3. ellipsoid_joint_size_rotation \n")
-    print("You can change the dataset name and output directory name to try out this use case with other datasets")
-
+    print(
+        "1. ellipsoid_joint_rotation \t 2. ellipsoid_joint_size \t 3. ellipsoid_joint_size_rotation \n"
+    )
+    print(
+        "You can change the dataset name and output directory name to try out this use case with other datasets"
+    )
 
     dataset_name = "ellipsoid_joint_rotation"
     output_directory = "Output/ellipsoid_multiple_domain/"
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
-
     # If running a tiny_test, then download subset of the data
     if args.tiny_test:
-        sw.data.download_subset(
-            args.use_case, dataset_name, output_directory)
-        file_list = sorted(glob.glob(output_directory +
-                                     dataset_name + "/segmentations/*.nrrd"))[:6]
+        sw.data.download_subset(args.use_case, dataset_name, output_directory)
+        file_list = sorted(
+            glob.glob(output_directory + dataset_name + "/segmentations/*.nrrd")
+        )[:6]
     # Else download the entire dataset
     else:
         sw.data.download_and_unzip_dataset(dataset_name, output_directory)
-        file_list = sorted(glob.glob(output_directory +
-                                     dataset_name + "/segmentations/*.nrrd"))
+        file_list = sorted(
+            glob.glob(output_directory + dataset_name + "/segmentations/*.nrrd")
+        )
 
         if args.use_subsample:
-            sample_idx = sw.data.sample_images(file_list, int(args.num_subsample),domains_per_shape=2)
+            sample_idx = sw.data.sample_images(
+                file_list, int(args.num_subsample), domains_per_shape=2
+            )
             file_list = [file_list[i] for i in sample_idx]
 
-          
     # If skipping grooming, use the pregroomed distance transforms from the portal
     if args.skip_grooming:
         print("Skipping grooming.")
-        dt_directory = output_directory + dataset_name + '/groomed/distance_transforms/'
+        dt_directory = output_directory + dataset_name + "/groomed/distance_transforms/"
         indices = []
         if args.tiny_test:
             indices = list(range(6))
         elif args.use_subsample:
             indices = sample_idx
-        dt_files = sw.data.get_file_list(
-            dt_directory, ending=".nrrd", indices=indices)
-
+        dt_files = sw.data.get_file_list(dt_directory, ending=".nrrd", indices=indices)
 
     # Else groom the segmentations and get distance transforms for optimization
     else:
@@ -82,7 +85,7 @@ def Run_Pipeline(args):
         """
 
         # Create a directory for groomed output
-        groom_dir = output_directory + 'groomed/'
+        groom_dir = output_directory + "groomed/"
         if not os.path.exists(groom_dir):
             os.makedirs(groom_dir)
 
@@ -95,44 +98,40 @@ def Run_Pipeline(args):
         shape_names = []
         domain_ids = []
         for shape_filename in file_list:
-            print('Loading: ' + shape_filename)
+            print("Loading: " + shape_filename)
             # get current shape name
-            shape_names.append(shape_filename.split('/')[-1].replace('.nrrd', ''))
+            shape_names.append(shape_filename.split("/")[-1].replace(".nrrd", ""))
 
             # get domain identifiers
-            name = shape_filename.split('/')[-1].replace('.nrrd', '')
+            name = shape_filename.split("/")[-1].replace(".nrrd", "")
             domain_ids.append(name.split(".")[0].split("_")[-1])
-            
+
             # load segmentation
             shape_seg = sw.Image(shape_filename)
             # append to the shape list
             shape_seg_list.append(shape_seg)
-        #domain identifiers for all shapes
+        # domain identifiers for all shapes
         domain_ids = np.array(domain_ids)
-        #shape index for all shapes in domain 1 
-        domain1_indx = list(np.where(domain_ids == 'd1')[0])
-        #shape index for all shapes in domain 2
-        domain2_indx = list(np.where(domain_ids == 'd2')[0])
-
-
-
-
+        # shape index for all shapes in domain 1
+        domain1_indx = list(np.where(domain_ids == "d1")[0])
+        # shape index for all shapes in domain 2
+        domain2_indx = list(np.where(domain_ids == "d2")[0])
 
         """
         Now we can loop over the segmentations and apply the initial grooming steps to themm
         """
-        
+
         for shape_seg, shape_name in zip(shape_seg_list, shape_names):
 
             """
             Grooming Step 1: Resample segmentations to have isotropic (uniform) spacing
-                - Antialiase the binary segmentation to convert it to a smooth continuous-valued 
+                - Antialiase the binary segmentation to convert it to a smooth continuous-valued
                 image for interpolation
                 - Resample the antialiased image using the same voxel spacing for all dimensions
-                - Binarize the resampled images to results in a binary segmentation with an 
+                - Binarize the resampled images to results in a binary segmentation with an
                 isotropic voxel spacing
             """
-            print('Resampling segmentation: ' + shape_name)
+            print("Resampling segmentation: " + shape_name)
             # antialias for 30 iterations
             antialias_iterations = 30
             shape_seg.antialias(antialias_iterations)
@@ -160,12 +159,19 @@ def Run_Pipeline(args):
         sigma = 2
         # Loop over segs and compute smooth DT
         for shape_seg, shape_name in zip(shape_seg_list, shape_names):
-            print('Compute DT for segmentation: ' + shape_name)
-            shape_seg.antialias(antialias_iterations).computeDT(
-                iso_value).gaussianBlur(sigma)
+            print("Compute DT for segmentation: " + shape_name)
+            shape_seg.antialias(antialias_iterations).computeDT(iso_value).gaussianBlur(
+                sigma
+            )
         # Save distance transforms
-        dt_files = sw.utils.save_images(groom_dir + 'distance_transforms/', shape_seg_list,
-                                        shape_names, extension='nrrd', compressed=False, verbose=True)
+        dt_files = sw.utils.save_images(
+            groom_dir + "distance_transforms/",
+            shape_seg_list,
+            shape_names,
+            extension="nrrd",
+            compressed=False,
+            verbose=True,
+        )
 
     print("\nStep 3. Optimize - Particle Based Optimization\n")
     """
@@ -179,47 +185,47 @@ def Run_Pipeline(args):
     """
 
     # Make directory to save optimization output
-    point_dir = output_directory + 'shape_models/'
+    point_dir = output_directory + "shape_models/"
     if not os.path.exists(point_dir):
         os.makedirs(point_dir)
     # Create a dictionary for all the parameters required by optimization
     # Create a dictionary for all the parameters required by optimization
     parameter_dictionary = {
-        "number_of_particles" : [512,512],
-        "use_normals": [0,0],
-        "normal_weight": [1.0,1.0],
-        "checkpointing_interval" : 200,
-        "keep_checkpoints" : 0,
-        "iterations_per_split" : 500,
-        "optimization_iterations" : 500,
-        "starting_regularization" :100,
-        "ending_regularization" : 0.5,
-        "recompute_regularization_interval" : 2,
-        "domains_per_shape" : 2,
-        "domain_type" : 'image',
-        "relative_weighting" : 1, #10 mesh, # 1 for segmentation images
-        "initial_relative_weighting" : 0.1,
-        "procrustes_interval" : 0,
-        "procrustes_scaling" : 0,
-        "save_init_splits" : 0,
-        "verbosity" : 3
-
-      }
+        "number_of_particles": [512, 512],
+        "use_normals": [0, 0],
+        "normal_weight": [1.0, 1.0],
+        "checkpointing_interval": 200,
+        "keep_checkpoints": 0,
+        "iterations_per_split": 500,
+        "optimization_iterations": 500,
+        "starting_regularization": 100,
+        "ending_regularization": 0.5,
+        "recompute_regularization_interval": 2,
+        "domains_per_shape": 2,
+        "domain_type": "image",
+        "relative_weighting": 1,  # 10 mesh, # 1 for segmentation images
+        "initial_relative_weighting": 0.1,
+        "procrustes_interval": 0,
+        "procrustes_scaling": 0,
+        "save_init_splits": 0,
+        "verbosity": 3,
+    }
 
     if args.tiny_test:
-        parameter_dictionary["number_of_particles"] = [32,32]
+        parameter_dictionary["number_of_particles"] = [32, 32]
         parameter_dictionary["optimization_iterations"] = 25
-    
-    
-    [local_point_files, world_point_files] = OptimizeUtils.runShapeWorksOptimize(
-        point_dir, dt_files, parameter_dictionary)
 
+    [local_point_files, world_point_files] = OptimizeUtils.runShapeWorksOptimize(
+        point_dir, dt_files, parameter_dictionary
+    )
 
     if args.tiny_test:
         print("Done with tiny test")
         exit()
 
-    print("\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n")
+    print(
+        "\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n"
+    )
     """
     Step 4: ANALYZE - Shape Analysis and Visualization
 
@@ -229,4 +235,5 @@ def Run_Pipeline(args):
     """
     domains_per_shape = 2
     AnalyzeUtils.launchShapeWorksStudio(
-        point_dir, dt_files, local_point_files, world_point_files,domains_per_shape)
+        point_dir, dt_files, local_point_files, world_point_files, domains_per_shape
+    )

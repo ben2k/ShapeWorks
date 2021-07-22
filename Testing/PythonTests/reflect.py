@@ -2,72 +2,82 @@ import os
 import sys
 from shapeworks import *
 
+
 def reflectTest1():
-  img = Image(os.environ["DATA"] + "/la-bin.nrrd")
-  img.reflect(Axis.Z)
+    img = Image(os.environ["DATA"] + "/la-bin.nrrd")
+    img.reflect(Axis.Z)
 
-  compareImg = Image(os.environ["DATA"] + "/reflect1.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/reflect1.nrrd")
 
-  return img.compare(compareImg)
+    return img.compare(compareImg)
+
 
 val = reflectTest1()
 
 if val is False:
-  print("reflectTest1 failed")
-  sys.exit(1)
+    print("reflectTest1 failed")
+    sys.exit(1)
+
 
 def reflectTest2():
-  img = Image(os.environ["DATA"] + "/la-bin.nrrd")
-  img.reflect(Axis.X)
+    img = Image(os.environ["DATA"] + "/la-bin.nrrd")
+    img.reflect(Axis.X)
 
-  compareImg = Image(os.environ["DATA"] + "/reflect2.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/reflect2.nrrd")
 
-  return img.compare(compareImg)
+    return img.compare(compareImg)
+
 
 val = reflectTest2()
 
 if val is False:
-  print("reflectTest2 failed")
-  sys.exit(1)
+    print("reflectTest2 failed")
+    sys.exit(1)
+
 
 def reflectTest3():
-  mesh = Mesh(os.environ["DATA"] + "/femur.vtk")
-  mesh.reflect(Axis.X)
+    mesh = Mesh(os.environ["DATA"] + "/femur.vtk")
+    mesh.reflect(Axis.X)
 
-  compareMesh = Mesh(os.environ["DATA"] + "/reflect1.vtk")
+    compareMesh = Mesh(os.environ["DATA"] + "/reflect1.vtk")
 
-  return mesh == compareMesh
+    return mesh == compareMesh
+
 
 val = reflectTest3()
 
 if val is False:
-  print("reflectTest3 failed")
-  sys.exit(1)
+    print("reflectTest3 failed")
+    sys.exit(1)
+
 
 def reflectTest4():
-  mesh = Mesh(os.environ["DATA"] + "/femur.vtk")
-  mesh.reflect(Axis.Y)
+    mesh = Mesh(os.environ["DATA"] + "/femur.vtk")
+    mesh.reflect(Axis.Y)
 
-  compareMesh = Mesh(os.environ["DATA"] + "/reflect2.vtk")
+    compareMesh = Mesh(os.environ["DATA"] + "/reflect2.vtk")
 
-  return mesh == compareMesh
+    return mesh == compareMesh
+
 
 val = reflectTest4()
 
 if val is False:
-  print("reflectTest4 failed")
-  sys.exit(1)
+    print("reflectTest4 failed")
+    sys.exit(1)
+
 
 def reflectfailTest():
-  img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
-  img.reflect()
+    img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
+    img.reflect()
 
-  compareImg = Image(os.environ["DATA"] + "/reflectfail.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/reflectfail.nrrd")
 
-  return img.compare(compareImg)
+    return img.compare(compareImg)
+
 
 try:
-  val = reflectfailTest()
-  sys.exit(1)
+    val = reflectfailTest()
+    sys.exit(1)
 except TypeError:
-  sys.exit(0)
+    sys.exit(0)

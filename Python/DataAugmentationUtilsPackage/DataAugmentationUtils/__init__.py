@@ -1,7 +1,7 @@
 from DataAugmentationUtils import DataAugmentation
 from DataAugmentationUtils import Visualize
 
-'''
+"""
 Runs data augmentation and takes the following arguements:
 - out_dir = directory to save augmented data and related info
 - img_list = list of paths to images of real examples augmentation is based off of
@@ -12,17 +12,42 @@ Runs data augmentation and takes the following arguements:
 - sampler_type = type of distribution to represent embedded data with for sampling
 - processes = number of processes to break image generation between for parallelization
 - world_point_list = list of paths to local.particle files (required if different from local)
-'''
-def runDataAugmentation(out_dir, img_list, local_point_list, num_samples=3, num_dim=0, percent_variability=0.95, sampler_type="KDE", mixture_num=0, processes=1, world_point_list=None):
+"""
+
+
+def runDataAugmentation(
+    out_dir,
+    img_list,
+    local_point_list,
+    num_samples=3,
+    num_dim=0,
+    percent_variability=0.95,
+    sampler_type="KDE",
+    mixture_num=0,
+    processes=1,
+    world_point_list=None,
+):
     print("Running point based data augmentation.")
-    num_dim = DataAugmentation.point_based_aug(out_dir, img_list, local_point_list, num_samples, num_dim, percent_variability, sampler_type, mixture_num, processes, world_point_list)
+    num_dim = DataAugmentation.point_based_aug(
+        out_dir,
+        img_list,
+        local_point_list,
+        num_samples,
+        num_dim,
+        percent_variability,
+        sampler_type,
+        mixture_num,
+        processes,
+        world_point_list,
+    )
     print("Done.")
     return num_dim
 
-def visualizeAugmentation(data_csv, viz_type='splom'):
-    if viz_type == 'splom':
+
+def visualizeAugmentation(data_csv, viz_type="splom"):
+    if viz_type == "splom":
         Visualize.splom(data_csv)
-    elif viz_type == 'violin':
+    elif viz_type == "violin":
         Visualize.violin(data_csv)
     else:
         print("Error visualization type unrecognized.")

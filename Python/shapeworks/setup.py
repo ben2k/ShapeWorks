@@ -7,9 +7,9 @@ import setuptools
 # For development, source ../devenv.sh, passing the root source and build dirs.
 
 setuptools.setup(
-   name='shapeworks',
-   version='1.0',
-   description='Python module for Shapeworks.',
-   packages=setuptools.find_packages(),
-   install_requires=['requests'], #external packages as dependencies
+    name="shapeworks",
+    version="1.0",
+    description="Python module for Shapeworks.",
+    packages=setuptools.find_packages(),
+    install_requires=["requests"],  # external packages as dependencies
 )

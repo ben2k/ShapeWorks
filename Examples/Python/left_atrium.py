@@ -41,22 +41,25 @@ def Run_Pipeline(args):
         args.use_single_scale = 1
         sw.data.download_subset(args.use_case, dataset_name, output_directory)
         file_list_img = sorted(
-            glob.glob(output_directory + dataset_name + "/images/*.nrrd"))[:3]
+            glob.glob(output_directory + dataset_name + "/images/*.nrrd")
+        )[:3]
         file_list_seg = sorted(
-            glob.glob(output_directory + dataset_name + "/segmentations/*.nrrd"))[:3]
+            glob.glob(output_directory + dataset_name + "/segmentations/*.nrrd")
+        )[:3]
 
     # Else download the entire dataset
     else:
         sw.data.download_and_unzip_dataset(dataset_name, output_directory)
         file_list_img = sorted(
-            glob.glob(output_directory + dataset_name + "/images/*.nrrd"))
+            glob.glob(output_directory + dataset_name + "/images/*.nrrd")
+        )
         file_list_seg = sorted(
-            glob.glob(output_directory + dataset_name + "/segmentations/*.nrrd"))
+            glob.glob(output_directory + dataset_name + "/segmentations/*.nrrd")
+        )
 
         # Select representative data if using subsample
         if args.use_subsample:
-            sample_idx = sw.data.sample_images(
-                file_list_seg, int(args.num_subsample))
+            sample_idx = sw.data.sample_images(file_list_seg, int(args.num_subsample))
             file_list_seg = [file_list_seg[i] for i in sample_idx]
             file_list_img = [file_list_img[i] for i in sample_idx]
         else:
@@ -65,14 +68,13 @@ def Run_Pipeline(args):
     # If skipping grooming, use the pregroomed distance transforms from the portal
     if args.skip_grooming:
         print("Skipping grooming.")
-        dtDirecory = output_directory + dataset_name + '/groomed/distance_transforms/'
+        dtDirecory = output_directory + dataset_name + "/groomed/distance_transforms/"
         indices = []
         if args.tiny_test:
             indices = [0, 1, 2]
         elif args.use_subsample:
             indices = sample_idx
-        dt_files = sw.data.get_file_list(
-            dtDirecory, ending=".nrrd", indices=indices)
+        dt_files = sw.data.get_file_list(dtDirecory, ending=".nrrd", indices=indices)
 
     # Else groom the segmentations and get distance transforms for optimization
     else:
@@ -96,7 +98,7 @@ def Run_Pipeline(args):
         """
 
         # Create a directory for groomed output
-        groom_dir = output_directory + 'groomed/'
+        groom_dir = output_directory + "groomed/"
         if not os.path.exists(groom_dir):
             os.makedirs(groom_dir)
 
@@ -108,10 +110,9 @@ def Run_Pipeline(args):
         # list of shape names (shape files prefixes) to be used for saving outputs
         shape_seg_names = []
         for shape_filename in file_list_seg:
-            print('Loading: ' + shape_filename)
+            print("Loading: " + shape_filename)
             # get current shape name
-            shape_seg_names.append(shape_filename.split('/')
-                                   [-1].replace('.nrrd', ''))
+            shape_seg_names.append(shape_filename.split("/")[-1].replace(".nrrd", ""))
             # load segmentation
             shape_seg = sw.Image(shape_filename)
             # append to the shape list
@@ -127,10 +128,11 @@ def Run_Pipeline(args):
             # list of shape names (shape files prefixes) to be used for saving outputs
             shape_img_names = []
             for shape_filename in file_list_img:
-                print('Loading: ' + shape_filename)
+                print("Loading: " + shape_filename)
                 # get current shape name
-                shape_img_names.append(shape_filename.split('/')
-                                       [-1].replace('.nrrd', ''))
+                shape_img_names.append(
+                    shape_filename.split("/")[-1].replace(".nrrd", "")
+                )
                 # load image
                 shape_image = sw.Image(shape_filename)
                 # append to the shape image list
@@ -144,18 +146,20 @@ def Run_Pipeline(args):
             """
             Now we can loop over the images and apply the initial grooming steps to themm
             """
-            print("\nPerforming resampling, centering,and padding operation on images\n")
+            print(
+                "\nPerforming resampling, centering,and padding operation on images\n"
+            )
             for shape_img, shape_name in zip(shape_img_list, shape_img_names):
 
                 """
                 Grooming Step 1: Resample images to have isotropic (uniform) spacing
-                    - Antialiase the images to convert it to a smooth continuous-valued 
+                    - Antialiase the images to convert it to a smooth continuous-valued
                     image for interpolation
                     - Resample the antialiased image using the same voxel spacing for all dimensions
-                    - Binarize the resampled images to results in a binary image with an 
+                    - Binarize the resampled images to results in a binary image with an
                     isotropic voxel spacing
                 """
-                print('Resampling image: ' + shape_name)
+                print("Resampling image: " + shape_name)
                 # antialias for 30 iterations
                 antialias_iterations = 30
                 shape_img.antialias(antialias_iterations)
@@ -169,14 +173,14 @@ def Run_Pipeline(args):
                 Grooming Step 2:Recenter the image
 
                 """
-                print('Recentering image: ' + shape_name)
+                print("Recentering image: " + shape_name)
                 shape_img.recenter()
 
                 """
                 Grooming Step 3: Padding the image
 
                 """
-                print('Padding image: ' + shape_name)
+                print("Padding image: " + shape_name)
                 # parameters for padding
                 padding_size = 10  # number of voxels to pad for each dimension
                 padding_value = 0  # the constant value used to pad the segmentations
@@ -185,18 +189,20 @@ def Run_Pipeline(args):
         """
         Now we can loop over the segmentations and apply the initial grooming steps to them
         """
-        print("\nPerforming resampling, centering,and padding operation on segmentations\n")
+        print(
+            "\nPerforming resampling, centering,and padding operation on segmentations\n"
+        )
         for shape_seg, shape_name in zip(shape_seg_list, shape_seg_names):
 
             """
             Grooming Step 1: Resample segmentations to have isotropic (uniform) spacing
-                - Antialiase the binary segmentation to convert it to a smooth continuous-valued 
+                - Antialiase the binary segmentation to convert it to a smooth continuous-valued
                 image for interpolation
                 - Resample the antialiased image using the same voxel spacing for all dimensions
-                - Binarize the resampled images to results in a binary segmentation with an 
+                - Binarize the resampled images to results in a binary segmentation with an
                 isotropic voxel spacing
             """
-            print('Resampling segmentation: ' + shape_name)
+            print("Resampling segmentation: " + shape_name)
             # antialias for 30 iterations
             antialias_iterations = 30
             shape_seg.antialias(antialias_iterations)
@@ -210,14 +216,14 @@ def Run_Pipeline(args):
             Grooming Step 2:Recenter the segmentation image
 
             """
-            print('Recentering segmentation: ' + shape_name)
+            print("Recentering segmentation: " + shape_name)
             shape_seg.recenter()
 
             """
             Grooming Step 3: Padding the segmentation image
 
             """
-            print('Padding segmentation: ' + shape_name)
+            print("Padding segmentation: " + shape_name)
             # parameters for padding
             padding_size = 10  # number of voxels to pad for each dimension
             padding_value = 0  # the constant value used to pad the segmentations
@@ -234,11 +240,11 @@ def Run_Pipeline(args):
             (Because this step involves interpolation, we must antialias before and 
             binarize after as we did when resampling.)
         """
-        print('\n')
+        print("\n")
         for i in range(len(shape_seg_list)):
             shape_name = shape_seg_names[i]
             shape_seg = shape_seg_list[i]
-            print('Center of mass alignment: ' + shape_name)
+            print("Center of mass alignment: " + shape_name)
             # compute the center of mass of this segmentation
             shape_center = shape_seg.centerOfMass()
             # get the center of the image domain
@@ -247,27 +253,31 @@ def Run_Pipeline(args):
             translationVector = image_center - shape_center
             # perform antialias-translate-binarize
             shape_seg.antialias(antialias_iterations).translate(
-                translationVector).binarize()
+                translationVector
+            ).binarize()
             # if we are grooming the images, appply the COM alignment to the corresponding images
-            if(args.groom_images):
+            if args.groom_images:
                 shape_img_name = shape_img_names[i]
                 shape_img = shape_img_list[i]
                 print(
-                    "Center of mass alignment for corresponding image: " + shape_img_name)
+                    "Center of mass alignment for corresponding image: "
+                    + shape_img_name
+                )
 
                 # perform antialias-translate-binarize
                 shape_img.antialias(antialias_iterations).translate(
-                    translationVector).binarize()
+                    translationVector
+                ).binarize()
 
         """
         Grooming Step 5: Select a reference
         This step requires breaking the loop to load all of the segmentations at once so the shape
         closest to the mean can be found and selected as the reference. 
         """
-        print('\n')
+        print("\n")
         ref_index = sw.find_reference_image_index(shape_seg_list)
         # Make a copy of the reference segmentation
-        ref_seg = shape_seg_list[ref_index].write(groom_dir + 'reference.nrrd')
+        ref_seg = shape_seg_list[ref_index].write(groom_dir + "reference.nrrd")
         ref_name = shape_seg_names[ref_index]
         print("Reference found: " + ref_name)
 
@@ -281,7 +291,7 @@ def Run_Pipeline(args):
             - applying the rigid transformation to the segmentation
             - save the aligned images for the next step
         """
-        print('\n')
+        print("\n")
         # First antialias the reference segmentation
         ref_seg.antialias(antialias_iterations)
         # Set the alignment parameters
@@ -291,32 +301,48 @@ def Run_Pipeline(args):
         for i in range(len(shape_seg_list)):
             shape_name = shape_seg_names[i]
             shape_seg = shape_seg_list[i]
-            print('Aligning ' + shape_name + ' to ' + ref_name)
+            print("Aligning " + shape_name + " to " + ref_name)
             # compute rigid transformation
             shape_seg.antialias(antialias_iterations)
             rigidTransform = shape_seg.createTransform(
-                ref_seg, sw.TransformType.IterativeClosestPoint, iso_value, icp_iterations)
+                ref_seg,
+                sw.TransformType.IterativeClosestPoint,
+                iso_value,
+                icp_iterations,
+            )
             # second we apply the computed transformation, note that shape_seg has
             # already been antialiased, so we can directly apply the transformation
-            shape_seg.applyTransform(rigidTransform,
-                                     ref_seg.origin(),  ref_seg.dims(),
-                                     ref_seg.spacing(), ref_seg.coordsys(),
-                                     sw.InterpolationType.Linear)
+            shape_seg.applyTransform(
+                rigidTransform,
+                ref_seg.origin(),
+                ref_seg.dims(),
+                ref_seg.spacing(),
+                ref_seg.coordsys(),
+                sw.InterpolationType.Linear,
+            )
             # then turn antialized-tranformed segmentation to a binary segmentation
             shape_seg.binarize()
             # If we are grooming the iamges, apply the rigid alignment to the corresponding images
-            if(args.groom_images):
+            if args.groom_images:
                 shape_img_name = shape_img_names[i]
                 shape_img = shape_img_list[i]
-                print('Aligning the corresponding image: ' +
-                      shape_img_name + ' to ' + ref_name)
+                print(
+                    "Aligning the corresponding image: "
+                    + shape_img_name
+                    + " to "
+                    + ref_name
+                )
                 # second we apply the computed transformation,first we antialias and then
                 # we can directly apply the transformation
                 shape_img.antialias(antialias_iterations)
-                shape_img.applyTransform(rigidTransform,
-                                         ref_seg.origin(),  ref_seg.dims(),
-                                         ref_seg.spacing(), ref_seg.coordsys(),
-                                         sw.InterpolationType.Linear)
+                shape_img.applyTransform(
+                    rigidTransform,
+                    ref_seg.origin(),
+                    ref_seg.dims(),
+                    ref_seg.spacing(),
+                    ref_seg.coordsys(),
+                    sw.InterpolationType.Linear,
+                )
                 # then turn antialized-tranformed segmentation to a binary image
                 shape_img.binarize()
 
@@ -326,11 +352,10 @@ def Run_Pipeline(args):
         the largest bounding box as this will contain all the segmentations. This requires 
         loading all segmentation files at once.
         """
-        print('\n')
+        print("\n")
         # Compute bounding box - aligned segmentations are binary images, so an good iso_value is 0.5
         iso_value = 0.5
-        segs_bounding_box = sw.ImageUtils.boundingBox(
-            shape_seg_list, iso_value)
+        segs_bounding_box = sw.ImageUtils.boundingBox(shape_seg_list, iso_value)
 
         """
         Grooming Step 8: Apply cropping and padding
@@ -348,22 +373,27 @@ def Run_Pipeline(args):
         for i in range(len(shape_seg_list)):
             shape_name = shape_seg_names[i]
             shape_seg = shape_seg_list[i]
-            print('Cropping & padding segmentation: ' + shape_name)
+            print("Cropping & padding segmentation: " + shape_name)
             shape_seg.crop(segs_bounding_box).pad(padding_size, padding_value)
 
             # if we are grooming images, apply same cropping and padding to images
-            if(args.groom_images):
+            if args.groom_images:
                 shape_img_name = shape_img_names[i]
                 shape_img = shape_img_list[i]
-                print('Cropping & padding corresponding image: ' + shape_img_name)
-                shape_img.crop(segs_bounding_box).pad(
-                    padding_size, padding_value)
+                print("Cropping & padding corresponding image: " + shape_img_name)
+                shape_img.crop(segs_bounding_box).pad(padding_size, padding_value)
 
         # Save groomed images
         if args.groom_images:
-            print('\nSaving groomed images\n')
-            sw.utils.save_images(groom_dir + 'images', shape_img_list,
-                                 shape_img_names, extension='nrrd', compressed=False, verbose=True)
+            print("\nSaving groomed images\n")
+            sw.utils.save_images(
+                groom_dir + "images",
+                shape_img_list,
+                shape_img_names,
+                extension="nrrd",
+                compressed=False,
+                verbose=True,
+            )
         """
         Grooming Step 9: Converting segmentations to smooth signed distance transforms.
         The computeDT API needs an iso_value that defines the foreground-background interface, to create 
@@ -376,18 +406,25 @@ def Run_Pipeline(args):
             - Apply smoothing
             - Save the distance transform
         """
-        print('\n')
+        print("\n")
         # Define distance transform parameters
         iso_value = 0
         sigma = 1.3
         # Loop over segs and compute smooth DT
         for shape_seg, shape_name in zip(shape_seg_list, shape_seg_names):
-            print('Compute DT for segmentation: ' + shape_name)
-            shape_seg.antialias(antialias_iterations).computeDT(
-                iso_value).gaussianBlur(sigma)
+            print("Compute DT for segmentation: " + shape_name)
+            shape_seg.antialias(antialias_iterations).computeDT(iso_value).gaussianBlur(
+                sigma
+            )
         # Save distance transforms
-        dt_files = sw.utils.save_images(groom_dir + 'distance_transforms/', shape_seg_list,
-                                        shape_seg_names, extension='nrrd', compressed=False, verbose=True)
+        dt_files = sw.utils.save_images(
+            groom_dir + "distance_transforms/",
+            shape_seg_list,
+            shape_seg_names,
+            extension="nrrd",
+            compressed=False,
+            verbose=True,
+        )
 
     print("\nStep 3. Optimize - Particle Based Optimization\n")
     """
@@ -400,7 +437,7 @@ def Run_Pipeline(args):
     """
 
     # Make directory to save optimization output
-    point_dir = output_directory + 'shape_models/'
+    point_dir = output_directory + "shape_models/"
     if not os.path.exists(point_dir):
         os.makedirs(point_dir)
     # Create a dictionary for all the parameters required by optimization
@@ -417,12 +454,12 @@ def Run_Pipeline(args):
         "recompute_regularization_interval": 2,
         "domains_per_shape": 1,
         "relative_weighting": 10,
-        "domain_type": 'image',
+        "domain_type": "image",
         "initial_relative_weighting": 0.1,
         "procrustes_interval": 1,
         "procrustes_scaling": 1,
         "save_init_splits": 0,
-        "verbosity": 3
+        "verbosity": 3,
     }
     # If running a tiny test, reduce some parameters
     if args.tiny_test:
@@ -438,13 +475,16 @@ def Run_Pipeline(args):
     Now we execute the particle optimization function.
     """
     [local_point_files, world_point_files] = OptimizeUtils.runShapeWorksOptimize(
-        point_dir, dt_files, parameter_dictionary)
+        point_dir, dt_files, parameter_dictionary
+    )
 
     if args.tiny_test:
         print("Done with tiny test")
         exit()
 
-    print("\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n")
+    print(
+        "\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n"
+    )
     """
     Step 4: ANALYZE - Shape Analysis and Visualization
     Now we launch studio to analyze the resulting shape model.
@@ -454,4 +494,5 @@ def Run_Pipeline(args):
 
     print("\nStep 5. Analysis - Launch ShapeWorksStudio.\n")
     AnalyzeUtils.launchShapeWorksStudio(
-        point_dir, dt_files, local_point_files, world_point_files)
+        point_dir, dt_files, local_point_files, world_point_files
+    )

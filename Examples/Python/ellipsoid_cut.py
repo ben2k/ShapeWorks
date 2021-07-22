@@ -12,6 +12,7 @@ import shapeworks as sw
 import OptimizeUtils
 import AnalyzeUtils
 
+
 def Run_Pipeline(args):
     print("\nStep 1. Extract Data\n")
     """
@@ -28,15 +29,16 @@ def Run_Pipeline(args):
     # If running a tiny_test, then download subset of the data
     if args.tiny_test:
         args.use_single_scale = 1
-        sw.data.download_subset(
-            args.use_case, dataset_name, output_directory)
-        file_list = sorted(glob.glob(output_directory +
-                                     dataset_name + "/segmentations/*.nrrd"))[:3]
+        sw.data.download_subset(args.use_case, dataset_name, output_directory)
+        file_list = sorted(
+            glob.glob(output_directory + dataset_name + "/segmentations/*.nrrd")
+        )[:3]
     # Else download the entire dataset
     else:
         sw.data.download_and_unzip_dataset(dataset_name, output_directory)
-        file_list = sorted(glob.glob(output_directory +
-                                     dataset_name + "/segmentations/*.nrrd"))
+        file_list = sorted(
+            glob.glob(output_directory + dataset_name + "/segmentations/*.nrrd")
+        )
 
         # Select representative data if using subsample
         if args.use_subsample:
@@ -55,7 +57,7 @@ def Run_Pipeline(args):
     """
 
     # Create a directory for groomed output
-    groom_dir = output_directory + 'groomed/'
+    groom_dir = output_directory + "groomed/"
     if not os.path.exists(groom_dir):
         os.makedirs(groom_dir)
 
@@ -80,19 +82,26 @@ def Run_Pipeline(args):
     shape_names = []
     # Loop over segs and compute smooth DT
     for shape_filename in file_list:
-        print('Loading: ' + shape_filename)
+        print("Loading: " + shape_filename)
         # get current shape name
-        shape_name = shape_filename.split('/')[-1].replace('.nrrd', '')
+        shape_name = shape_filename.split("/")[-1].replace(".nrrd", "")
         shape_names.append(shape_name)
         # load segmentation
         shape_seg = sw.Image(shape_filename)
-        print('Compute DT for segmentation: ' + shape_name)
-        shape_seg.antialias(antialias_iterations).computeDT(
-            iso_value).gaussianBlur(sigma)
+        print("Compute DT for segmentation: " + shape_name)
+        shape_seg.antialias(antialias_iterations).computeDT(iso_value).gaussianBlur(
+            sigma
+        )
         dt_list.append(shape_seg)
     # Save distance transforms
-    dt_files = sw.utils.save_images(groom_dir + 'distance_transforms/', dt_list,
-                                    shape_names, extension='nrrd', compressed=False, verbose=True)
+    dt_files = sw.utils.save_images(
+        groom_dir + "distance_transforms/",
+        dt_list,
+        shape_names,
+        extension="nrrd",
+        compressed=False,
+        verbose=True,
+    )
 
     print("\nStep 3. Optimize - Particle Based Optimization\n")
     """
@@ -106,13 +115,13 @@ def Run_Pipeline(args):
     """
 
     # Make directory to save optimization output
-    point_dir = output_directory + 'shape_models/'
+    point_dir = output_directory + "shape_models/"
     if not os.path.exists(point_dir):
         os.makedirs(point_dir)
 
     # Define the cutting planes
     cutting_plane_points1 = [[10, 10, 0], [-10, -10, 0], [10, -10, 0]]
-    cutting_plane_points2 = [[10, 0, 10], [-10, 0 ,10], [10, 0, -10]]
+    cutting_plane_points2 = [[10, 0, 10], [-10, 0, 10], [10, 0, -10]]
     cp = [cutting_plane_points1, cutting_plane_points2]
     # Cutting planes
     cutting_planes = []
@@ -135,7 +144,7 @@ def Run_Pipeline(args):
         "ending_regularization": 10,
         "recompute_regularization_interval": 2,
         "domains_per_shape": 1,
-        "domain_type": 'image',
+        "domain_type": "image",
         "relative_weighting": 15,
         "initial_relative_weighting": 0.05,
         "procrustes_interval": 0,
@@ -144,7 +153,7 @@ def Run_Pipeline(args):
         "verbosity": 2,
         "adaptivity_mode": 0,
         "cutting_plane_counts": cutting_plane_counts,
-        "cutting_planes": cutting_planes
+        "cutting_planes": cutting_planes,
     }
     # If running a tiny test, reduce some parameters
     if args.tiny_test:
@@ -155,13 +164,16 @@ def Run_Pipeline(args):
         parameter_dictionary["use_shape_statistics_after"] = 16
     # Execute the optimization function
     [local_point_files, world_point_files] = OptimizeUtils.runShapeWorksOptimize(
-        point_dir, dt_files, parameter_dictionary)
+        point_dir, dt_files, parameter_dictionary
+    )
 
     if args.tiny_test:
         print("Done with tiny test")
         exit()
 
-    print("\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n")
+    print(
+        "\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n"
+    )
     """
     Step 4: ANALYZE - Shape Analysis and Visualization
 
@@ -170,4 +182,5 @@ def Run_Pipeline(args):
     http://sciinstitute.github.io/ShapeWorks/workflow/analyze.html
     """
     AnalyzeUtils.launchShapeWorksStudio(
-        point_dir, dt_files, local_point_files, world_point_files)
+        point_dir, dt_files, local_point_files, world_point_files
+    )

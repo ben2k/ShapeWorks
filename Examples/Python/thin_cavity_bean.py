@@ -31,13 +31,15 @@ def Run_Pipeline(args):
     if args.tiny_test:
         args.use_single_scale = 1
         sw.data.download_subset(args.use_case, dataset_name, output_directory)
-        mesh_files = sorted(glob.glob(output_directory +
-                            dataset_name + "/meshes/*.ply"))[:3]
+        mesh_files = sorted(
+            glob.glob(output_directory + dataset_name + "/meshes/*.ply")
+        )[:3]
     # else download the entire dataset
     else:
         sw.data.download_and_unzip_dataset(dataset_name, output_directory)
-        mesh_files = sorted(glob.glob(output_directory +
-                            dataset_name + "/meshes/*.ply"))
+        mesh_files = sorted(
+            glob.glob(output_directory + dataset_name + "/meshes/*.ply")
+        )
 
         # Select data if using subsample
         if args.use_subsample:
@@ -57,7 +59,7 @@ def Run_Pipeline(args):
     """
 
     # Make directory to save optimization output
-    point_dir = output_directory + 'shape_models/'
+    point_dir = output_directory + "shape_models/"
     if not os.path.exists(point_dir):
         os.makedirs(point_dir)
     # Create a dictionary for all the parameters required by optimization
@@ -73,7 +75,7 @@ def Run_Pipeline(args):
         "ending_regularization": 0.1,
         "recompute_regularization_interval": 1,
         "domains_per_shape": 1,
-        "domain_type": 'mesh',
+        "domain_type": "mesh",
         "relative_weighting": 15,
         "initial_relative_weighting": 0.01,
         "procrustes_interval": 0,
@@ -92,13 +94,16 @@ def Run_Pipeline(args):
         parameter_dictionary["use_shape_statistics_after"] = 32
     # Execute the optimization function
     [local_point_files, world_point_files] = OptimizeUtils.runShapeWorksOptimize(
-        point_dir, mesh_files, parameter_dictionary)
+        point_dir, mesh_files, parameter_dictionary
+    )
 
     if args.tiny_test:
         print("Done with tiny test")
         exit()
 
-    print("\nStep 3. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n")
+    print(
+        "\nStep 3. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n"
+    )
     """
     Step 3: ANALYZE - Shape Analysis and Visualization
 
@@ -107,4 +112,5 @@ def Run_Pipeline(args):
     http://sciinstitute.github.io/ShapeWorks/workflow/analyze.html
     """
     AnalyzeUtils.launchShapeWorksStudio(
-        point_dir, mesh_files, local_point_files, world_point_files)
+        point_dir, mesh_files, local_point_files, world_point_files
+    )
