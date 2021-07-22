@@ -8,18 +8,16 @@ import shapeworks as sw
 import numpy as np
 
 
-
-
-
 def Run_Pipeline(args):
     ellipsoids_dir = 'Output/ellipsoid'
     shape_models_dir = f'{ellipsoids_dir}/shape_models/128'
     if args.tiny_test:
         shape_models_dir = f'{ellipsoids_dir}/shape_models/32'
     if not os.path.exists(shape_models_dir):
-        print(f'Ellipsoids output not found in {shape_models_dir}. Please run the ellipsoid use case first.', file=sys.stderr)
+        print(
+            f'Ellipsoids output not found in {shape_models_dir}. Please run the ellipsoid use case first.', file=sys.stderr)
         sys.exit(1)
-    
+
     eval_dir = f'{ellipsoids_dir}/evaluation'
     for subdir in ('compactness', 'generalization', 'specificity'):
         Path(eval_dir).joinpath(Path(subdir)).mkdir(

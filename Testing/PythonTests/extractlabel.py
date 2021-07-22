@@ -2,58 +2,66 @@ import os
 import sys
 from shapeworks import *
 
+
 def extractlabelTest1():
-  img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
-  img.extractLabel()
+    img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
+    img.extractLabel()
 
-  compareImg = Image(os.environ["DATA"] + "/extractlabel1.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/extractlabel1.nrrd")
 
-  return img.compare(compareImg)
+    return img.compare(compareImg)
+
 
 val = extractlabelTest1()
 
 if val is False:
-  print("extractlabelTest1 failed")
-  sys.exit(1)
+    print("extractlabelTest1 failed")
+    sys.exit(1)
+
 
 def extractlabelTest2():
-  img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
-  img.extractLabel(2.0)
+    img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
+    img.extractLabel(2.0)
 
-  compareImg = Image(os.environ["DATA"] + "/extractlabel2.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/extractlabel2.nrrd")
 
-  return img.compare(compareImg)
+    return img.compare(compareImg)
+
 
 val = extractlabelTest2()
 
 if val is False:
-  print("extractlabelTest2 failed")
-  sys.exit(1)
+    print("extractlabelTest2 failed")
+    sys.exit(1)
+
 
 def extractlabelTest3():
-  img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
-  img.extractLabel(-2.0)
+    img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
+    img.extractLabel(-2.0)
 
-  compareImg = Image(os.environ["DATA"] + "/extractlabel3.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/extractlabel3.nrrd")
 
-  return img.compare(compareImg)
+    return img.compare(compareImg)
+
 
 val = extractlabelTest3()
 
 if val is False:
-  print("extractlabelTest3 failed")
-  sys.exit(1)
+    print("extractlabelTest3 failed")
+    sys.exit(1)
+
 
 def extractlabelTest4():
-  img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
-  img.extractLabel(0)
+    img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
+    img.extractLabel(0)
 
-  compareImg = Image(os.environ["DATA"] + "/extractlabel4.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/extractlabel4.nrrd")
 
-  return img.compare(compareImg)
+    return img.compare(compareImg)
+
 
 val = extractlabelTest4()
 
 if val is False:
-  print("extractlabelTest4 failed")
-  sys.exit(1)
+    print("extractlabelTest4 failed")
+    sys.exit(1)

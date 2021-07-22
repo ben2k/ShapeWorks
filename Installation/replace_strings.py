@@ -4,11 +4,14 @@ import fileinput
 """
 Replaces strings in a file.
 """
+
+
 def replace_strings(file, search_exp, replace_exp):
     for line in fileinput.input(file, backup='', inplace=1):
         if search_exp in line:
             line = line.replace(search_exp, replace_exp)
         sys.stdout.write(line)
+
 
 if __name__ == "__main__":
     if len(sys.argv[1:]) != 3:

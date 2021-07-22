@@ -12,6 +12,7 @@ import shapeworks as sw
 import OptimizeUtils
 import AnalyzeUtils
 
+
 def Run_Pipeline(args):
     print("\nStep 1. Extract Data\n")
     """
@@ -40,7 +41,8 @@ def Run_Pipeline(args):
 
         # Select representative data if using subsample
         if args.use_subsample:
-            sample_idx = sw.data.sample_images(file_list, int(args.num_subsample))
+            sample_idx = sw.data.sample_images(
+                file_list, int(args.num_subsample))
             file_list = [file_list[i] for i in sample_idx]
 
     print("\nStep 2. Groom - Create distance transforms\n")
@@ -112,7 +114,7 @@ def Run_Pipeline(args):
 
     # Define the cutting planes
     cutting_plane_points1 = [[10, 10, 0], [-10, -10, 0], [10, -10, 0]]
-    cutting_plane_points2 = [[10, 0, 10], [-10, 0 ,10], [10, 0, -10]]
+    cutting_plane_points2 = [[10, 0, 10], [-10, 0, 10], [10, 0, -10]]
     cp = [cutting_plane_points1, cutting_plane_points2]
     # Cutting planes
     cutting_planes = []

@@ -103,8 +103,10 @@ def Run_Pipeline(args):
     down_dir = out_dir + 'DownsampledImages/'
     batch_size = 8
     loader_dir = out_dir + 'TorchDataLoaders/'
-    DeepSSMUtils.getTrainValLoaders(loader_dir, aug_data_csv, batch_size, down_factor, down_dir)
-    DeepSSMUtils.getTestLoader(loader_dir, test_img_list, down_factor, down_dir)
+    DeepSSMUtils.getTrainValLoaders(
+        loader_dir, aug_data_csv, batch_size, down_factor, down_dir)
+    DeepSSMUtils.getTestLoader(
+        loader_dir, test_img_list, down_factor, down_dir)
 
     print("\n\n\nStep 4. Train model.\n")
     # Define model parameters
@@ -147,7 +149,7 @@ def Run_Pipeline(args):
     if args.tiny_test:
         model_parameters["trainer"]["epochs"] = 1
         model_parameters["fine_tune"]["epochs"] = 1
-    # Save config file    
+    # Save config file
     config_file = out_dir + model_name + ".json"
     with open(config_file, "w") as outfile:
         json.dump(model_parameters, outfile, indent=2)
@@ -173,5 +175,6 @@ def Run_Pipeline(args):
     DT_dir = input_dir + "groomed/distance_transforms/"
     out_dir = out_dir + "Results/"
     mean_prefix = input_dir + "shape_models/femur/mean/femur"
-    avg_distance = DeepSSMUtils.analyzeResults(out_dir, DT_dir, prediction_dir + 'FT_Predictions/', mean_prefix)
+    avg_distance = DeepSSMUtils.analyzeResults(
+        out_dir, DT_dir, prediction_dir + 'FT_Predictions/', mean_prefix)
     print("Average surface-to-surface distance from the original to predicted shape = " + str(avg_distance))

@@ -9,8 +9,10 @@ from ShapeCohortGen.CohortGenUtils import *
 '''
 Generates super shapes and saves mesh form
 '''
+
+
 def generate(num_samples, out_dir, randomize_center, randomize_rotation, m, start_id, size):
-    meshDir= out_dir + "meshes/"
+    meshDir = out_dir + "meshes/"
     make_dir(meshDir)
     for i in range(num_samples):
         print("Generating shape " + str(i+1) + " out of " + str(num_samples))
@@ -22,22 +24,23 @@ def generate(num_samples, out_dir, randomize_center, randomize_rotation, m, star
         a = 1
         b = 1
         X, Y, Z, triIndices = super_formula_3D(m, n1, n2, n3, a, b)
-       	verts = np.column_stack((X,Y,Z))
+        verts = np.column_stack((X, Y, Z))
         # Generate shape
         shapeMesh = trimesh.Trimesh(vertices=verts, faces=triIndices)
         # Apply transform
         if randomize_center:
-            center_loc = list(np.random.randint(low = 0,high=30,size=3))
+            center_loc = list(np.random.randint(low=0, high=30, size=3))
         else:
-            center_loc = [0,0,0]
+            center_loc = [0, 0, 0]
         if randomize_rotation:
             rotation = np.random.rand(3)
         else:
             rotation = np.zeros(3)
-        S = trimesh.transformations.scale_matrix(size, [0,0,0])
+        S = trimesh.transformations.scale_matrix(size, [0, 0, 0])
         T = trimesh.transformations.translation_matrix(center_loc)
         R = trimesh.transformations.random_rotation_matrix(rotation)
-        transform_matrix = trimesh.transformations.concatenate_matrices(T, R, S)
+        transform_matrix = trimesh.transformations.concatenate_matrices(
+            T, R, S)
         shapeMesh = shapeMesh.apply_transform(transform_matrix)
 
         # Temporarily save mesh as stl and convert it to vtk
@@ -48,33 +51,43 @@ def generate(num_samples, out_dir, randomize_center, randomize_rotation, m, star
     return get_files(meshDir)
 
 # Name helper
+
+
 def get_id_str(num):
-	string = str(num)
-	while len(string) < 4:
-		string = '0' + string
-	return(string)
+    string = str(num)
+    while len(string) < 4:
+        string = '0' + string
+    return(string)
 
 # Shape generation helper
+
+
 def super_formula_3D(m, n1, n2, n3, a, b, numPoints=100000):
-	numPointsRoot = round(math.sqrt(numPoints))
-	theta = np.linspace(-math.pi, math.pi, endpoint=True, num=numPointsRoot)
-	phi = np.linspace(-math.pi / 2.0, math.pi/2.0, endpoint=True, num=numPointsRoot)
-	theta, phi = np.meshgrid(theta, phi)
-	theta, phi = theta.flatten(), phi.flatten()
-	r1 = super_formula_2D(m, n1, n2, n3, a, b, theta)
-	r2 = super_formula_2D(m, n1, n2, n3, a, b, phi)
-	x = r1 * r2 * np.cos(theta) * np.cos(phi)
-	y = r1 * r2 * np.sin(theta) * np.cos(phi)
-	z = r2 * np.sin(phi)
-	tri = mtri.Triangulation(theta, phi)
-	return x, y, z, tri.triangles
+    numPointsRoot = round(math.sqrt(numPoints))
+    theta = np.linspace(-math.pi, math.pi, endpoint=True, num=numPointsRoot)
+    phi = np.linspace(-math.pi / 2.0, math.pi/2.0,
+                      endpoint=True, num=numPointsRoot)
+    theta, phi = np.meshgrid(theta, phi)
+    theta, phi = theta.flatten(), phi.flatten()
+    r1 = super_formula_2D(m, n1, n2, n3, a, b, theta)
+    r2 = super_formula_2D(m, n1, n2, n3, a, b, phi)
+    x = r1 * r2 * np.cos(theta) * np.cos(phi)
+    y = r1 * r2 * np.sin(theta) * np.cos(phi)
+    z = r2 * np.sin(phi)
+    tri = mtri.Triangulation(theta, phi)
+    return x, y, z, tri.triangles
 
 # Shape generation helper
+
+
 def super_formula_2D(m, n1, n2, n3, a, b, theta):
-	r = abs((1 / a) * np.cos(m * theta / 4.0))**n2  +  abs((1 / b) * np.sin(m * theta / 4.0))**n3
-	return r**(-1 / n1)
+    r = abs((1 / a) * np.cos(m * theta / 4.0))**n2 + \
+        abs((1 / b) * np.sin(m * theta / 4.0))**n3
+    return r**(-1 / n1)
 
 # Sample points for a 2D supershape and return as np.ndarray
+
+
 def sample_super_formula_2D(n_points, m, n1, n2, n3):
     pts = np.ndarray((n_points, 3))
     for i in range(n_points):
@@ -85,6 +98,7 @@ def sample_super_formula_2D(n_points, m, n1, n2, n3):
         y = r * np.sin(theta)
         pts[i] = [x, y, 0.0]
     return pts
+
 
 def generate_2D(n_samples, n_points, out_dir,
                 m=6, n1_degree=None, n2_degree=None, n3_degree=None,

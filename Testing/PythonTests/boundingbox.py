@@ -3,46 +3,52 @@ import sys
 import glob
 from shapeworks import *
 
-def boundingboxTest1():
-  filenames = os.environ["DATA"] + "/many/"
-  region = ImageUtils.boundingBox(glob.glob(filenames + "/*.nrrd"))
 
-  return region.valid()
+def boundingboxTest1():
+    filenames = os.environ["DATA"] + "/many/"
+    region = ImageUtils.boundingBox(glob.glob(filenames + "/*.nrrd"))
+
+    return region.valid()
+
 
 val = boundingboxTest1()
 
 if val is False:
-  print("boundingboxTest1 failed")
-  sys.exit(1)
+    print("boundingboxTest1 failed")
+    sys.exit(1)
+
 
 def boundingboxTest2():
-  img1 = Image(os.environ["DATA"] + "/many/seg.ellipsoid_1.nrrd")
-  img2 = Image(os.environ["DATA"] + "/many/seg.ellipsoid_3.nrrd")
-  img3 = Image(os.environ["DATA"] + "/many/seg.ellipsoid_4.nrrd")
+    img1 = Image(os.environ["DATA"] + "/many/seg.ellipsoid_1.nrrd")
+    img2 = Image(os.environ["DATA"] + "/many/seg.ellipsoid_3.nrrd")
+    img3 = Image(os.environ["DATA"] + "/many/seg.ellipsoid_4.nrrd")
 
-  imgList = []
-  imgList.append(img1)
-  imgList.append(img2)
-  imgList.append(img3)
+    imgList = []
+    imgList.append(img1)
+    imgList.append(img2)
+    imgList.append(img3)
 
-  region = ImageUtils.boundingBox(imgList)
+    region = ImageUtils.boundingBox(imgList)
 
-  return region.valid()
+    return region.valid()
+
 
 val = boundingboxTest2()
 
 if val is False:
-  print("boundingboxTest2 failed")
-  sys.exit(1)
+    print("boundingboxTest2 failed")
+    sys.exit(1)
+
 
 def boundingboxfailTest():
-  filenames = os.environ["DATA"] + "/empty/"
-  region = ImageUtils.boundingBox(glob.glob(filenames + "/*.nrrd"))
+    filenames = os.environ["DATA"] + "/empty/"
+    region = ImageUtils.boundingBox(glob.glob(filenames + "/*.nrrd"))
 
-  return region.valid()
+    return region.valid()
+
 
 try:
-  val = boundingboxfailTest()
-  sys.exit(1)
+    val = boundingboxfailTest()
+    sys.exit(1)
 except ValueError:
-  sys.exit(0)
+    sys.exit(0)

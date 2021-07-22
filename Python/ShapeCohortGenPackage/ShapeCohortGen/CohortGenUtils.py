@@ -8,47 +8,60 @@ from shapeworks import *
 '''
 Make folder
 '''
+
+
 def make_dir(dir_path):
-	if os.path.exists(dir_path):
-		shutil.rmtree(dir_path)
-	os.makedirs(dir_path)
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+    os.makedirs(dir_path)
+
 
 '''
 Get list of full paths for files in dir
 '''
+
+
 def get_files(folder):
-	file_list = []
-	for file in os.listdir(folder):
-		file_path = folder + file
-		file_path = file_path.replace(" ","")
-		file_list.append(file_path)
-	file_list = sorted(file_list)
-	return file_list
+    file_list = []
+    for file in os.listdir(folder):
+        file_path = folder + file
+        file_path = file_path.replace(" ", "")
+        file_list.append(file_path)
+    file_list = sorted(file_list)
+    return file_list
+
 
 '''
 Get files with specific extensions
 '''
-def get_file_with_ext(file_list,extension):
-	extList =[]
-	for file in file_list:
-		ext = file.split(".")[-1]
-		if(ext==extension):
-			extList.append(file)
-	extList = sorted(extList)
-	return extList
+
+
+def get_file_with_ext(file_list, extension):
+    extList = []
+    for file in file_list:
+        ext = file.split(".")[-1]
+        if(ext == extension):
+            extList.append(file)
+    extList = sorted(extList)
+    return extList
+
 
 '''
 Takes inname path and replaces dir with outdir and adds extension before file type
 '''
+
+
 def rename(inname, outDir, extension_addition, extension_change=''):
-	initPath = os.path.dirname(inname)
-	outname = inname.replace(initPath, outDir)
-	current_extension = "." + inname.split(".")[-1]
-	if extension_addition != '':
-		outname = outname.replace(current_extension, '.' + extension_addition + current_extension)
-	if extension_change != '':
-		outname = outname.replace(current_extension, extension_change)
-	return outname
+    initPath = os.path.dirname(inname)
+    outname = inname.replace(initPath, outDir)
+    current_extension = "." + inname.split(".")[-1]
+    if extension_addition != '':
+        outname = outname.replace(
+            current_extension, '.' + extension_addition + current_extension)
+    if extension_change != '':
+        outname = outname.replace(current_extension, extension_change)
+    return outname
+
 
 '''
 Generate segmentations from mesh list:
@@ -57,100 +70,117 @@ Generate segmentations from mesh list:
  - if randomize_size, meshes not in allow_on_boundary subset will be ALL mesh region with different padding
  - this is an example of using Mesh.toImage, not a useful tool
 '''
-def generate_segmentations(meshList, out_dir, randomize_size=True, spacing=[1.0,1.0,1.0], allow_on_boundary=True):
 
-	# get list of meshs to be converted
-	segDir = out_dir + "segmentations/"
-	make_dir(segDir)
 
-	# get region that includes all of these meshes
-	bball = MeshUtils.boundingBox(meshList)
+def generate_segmentations(meshList, out_dir, randomize_size=True, spacing=[1.0, 1.0, 1.0], allow_on_boundary=True):
 
-	# randomly select 20% meshes for boundary touching samples
-	numMeshes = len(meshList)
-	meshIndexArray = np.array(list(range(numMeshes)))
-	subSampleSize = int(0.2*numMeshes)
-	randomBoundarySamples = np.random.choice(meshIndexArray,subSampleSize,replace=False)
+    # get list of meshs to be converted
+    segDir = out_dir + "segmentations/"
+    make_dir(segDir)
 
-	# loop through meshes and turn to images
-	segList = []
-	meshIndex = 0
-	for mesh_ in meshList:
-		print("Generating seg " + str(meshIndex + 1) + " out of " + str(len(meshList)))
-		segFile = rename(mesh_, segDir, "", ".nrrd")
-		segList.append(segFile)
+    # get region that includes all of these meshes
+    bball = MeshUtils.boundingBox(meshList)
 
-		# load .ply mesh and get its bounding box
-		mesh = Mesh(mesh_)
-		bb = mesh.boundingBox()
+    # randomly select 20% meshes for boundary touching samples
+    numMeshes = len(meshList)
+    meshIndexArray = np.array(list(range(numMeshes)))
+    subSampleSize = int(0.2*numMeshes)
+    randomBoundarySamples = np.random.choice(
+        meshIndexArray, subSampleSize, replace=False)
 
-		# if mesh isn't in the set for allow_on_boundary, add [random] padding
-		if not (allow_on_boundary and (meshIndex in randomBoundarySamples)):
-			bb = bball
+    # loop through meshes and turn to images
+    segList = []
+    meshIndex = 0
+    for mesh_ in meshList:
+        print("Generating seg " + str(meshIndex + 1) +
+              " out of " + str(len(meshList)))
+        segFile = rename(mesh_, segDir, "", ".nrrd")
+        segList.append(segFile)
 
-			pad = 5
-			if randomize_size:			
-				pad = np.random.randint(5, high=15, size=3)
-			else:
-				pad = np.array([5,5,5])
-			bb.min -= pad
-			bb.max += pad
+        # load .ply mesh and get its bounding box
+        mesh = Mesh(mesh_)
+        bb = mesh.boundingBox()
 
-		# sample the given region of Mesh to an image
-		image = mesh.toImage(region=bb, spacing=spacing)
+        # if mesh isn't in the set for allow_on_boundary, add [random] padding
+        if not (allow_on_boundary and (meshIndex in randomBoundarySamples)):
+            bb = bball
 
-		# write the result to disk and move to the next mesh
-		image.write(segFile, 0)
-		meshIndex += 1
+            pad = 5
+            if randomize_size:
+                pad = np.random.randint(5, high=15, size=3)
+            else:
+                pad = np.array([5, 5, 5])
+            bb.min -= pad
+            bb.max += pad
 
-	# return list of new image filenames
-	return segList
+        # sample the given region of Mesh to an image
+        image = mesh.toImage(region=bb, spacing=spacing)
+
+        # write the result to disk and move to the next mesh
+        image.write(segFile, 0)
+        meshIndex += 1
+
+    # return list of new image filenames
+    return segList
+
 
 '''
 Generates image by blurring and adding noise to segmentation
 '''
+
+
 def generate_images(segs, outDir, blur_factor, foreground_mean, foreground_var, background_mean, background_var):
-	imgDir = outDir + 'images/'
-	make_dir(imgDir)
-	index = 1
-	for seg in segs:
-		print("Generating image " + str(index) + " out of " + str(len(segs)))
-		name = seg.replace('segmentations/','images/').replace('_seg.nrrd', '_blur' + str(blur_factor) + '.nrrd')
-		img = Image(seg)
-		img_array = img.toArray()
-		img_array = blur(img_array, blur_factor)
-		img_array = apply_noise(img_array, foreground_mean, foreground_var, background_mean, background_var)
-		img_array = np.float32(img_array)
-		origin = img.origin()
-		img = Image(img_array)  # note: when we resolve #903 (shared data) we'll
-								# no longer even need to create an image since
-								# the array itself will be shared (issue #903)
-		img.setOrigin(origin)
-		img.write(name)
-		index += 1
-	return get_files(imgDir)
+    imgDir = outDir + 'images/'
+    make_dir(imgDir)
+    index = 1
+    for seg in segs:
+        print("Generating image " + str(index) + " out of " + str(len(segs)))
+        name = seg.replace('segmentations/', 'images/').replace('_seg.nrrd',
+                                                                '_blur' + str(blur_factor) + '.nrrd')
+        img = Image(seg)
+        img_array = img.toArray()
+        img_array = blur(img_array, blur_factor)
+        img_array = apply_noise(
+            img_array, foreground_mean, foreground_var, background_mean, background_var)
+        img_array = np.float32(img_array)
+        origin = img.origin()
+        # note: when we resolve #903 (shared data) we'll
+        img = Image(img_array)
+        # no longer even need to create an image since
+        # the array itself will be shared (issue #903)
+        img.setOrigin(origin)
+        img.write(name)
+        index += 1
+    return get_files(imgDir)
+
 
 '''
 get_image helper
 '''
+
+
 def blur(img, size):
-	blur = scipy.ndimage.filters.gaussian_filter(img, size)
-	return blur
+    blur = scipy.ndimage.filters.gaussian_filter(img, size)
+    return blur
+
 
 '''
 get_image helper
 '''
+
+
 def apply_noise(img, foreground_mean, foreground_var, background_mean, background_var):
-	background_indices = np.where(img < 0.5)
-	foreground_indices = np.where(img > 0.5)
-	img = img*(foreground_mean-background_mean)
-	img = img + np.ones(img.shape)*background_mean
-	foreground_noise = np.random.normal(0, foreground_var**0.5, img.shape)
-	foreground_noise[background_indices] = 0
-	background_noise = np.random.normal(0, background_var**0.5, img.shape)
-	background_noise[foreground_indices] = 0
-	noisy_img = img + foreground_noise + background_noise
-	return noisy_img
+    background_indices = np.where(img < 0.5)
+    foreground_indices = np.where(img > 0.5)
+    img = img*(foreground_mean-background_mean)
+    img = img + np.ones(img.shape)*background_mean
+    foreground_noise = np.random.normal(0, foreground_var**0.5, img.shape)
+    foreground_noise[background_indices] = 0
+    background_noise = np.random.normal(0, background_var**0.5, img.shape)
+    background_noise[foreground_indices] = 0
+    noisy_img = img + foreground_noise + background_noise
+    return noisy_img
+
 
 def compute_line_indices(n, is_closed=True):
     """
@@ -160,9 +190,10 @@ def compute_line_indices(n, is_closed=True):
     """
     lines = np.zeros((n if is_closed else n-1, 2), dtype=int)
     for i in range(lines.shape[0]):
-        lines[i] = [i, (i+1)%n]
+        lines[i] = [i, (i+1) % n]
 
     return lines
+
 
 def save_contour_as_vtp(points, lines, filename):
     """
@@ -175,7 +206,7 @@ def save_contour_as_vtp(points, lines, filename):
     n = points.shape[0]
     for j in range(n):
         x, y, z = points[j]
-        vtk_pts.InsertNextPoint((x,y,z))
+        vtk_pts.InsertNextPoint((x, y, z))
 
     vtk_lines = vtk.vtkCellArray()
     m = lines.shape[0]

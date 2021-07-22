@@ -2,39 +2,45 @@ import os
 import sys
 from shapeworks import *
 
-def compareTest1():
-  img = Image(os.environ["DATA"] + "/la-bin.nrrd")
-  compareImg = Image(os.environ["DATA"] + "/la-bin.nrrd")
 
-  return img.compare(compareImg)
+def compareTest1():
+    img = Image(os.environ["DATA"] + "/la-bin.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/la-bin.nrrd")
+
+    return img.compare(compareImg)
+
 
 val = compareTest1()
 
 if val is False:
-  print("compareTest1 failed")
-  sys.exit(1)
+    print("compareTest1 failed")
+    sys.exit(1)
+
 
 def compareTest2():
-  img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
-  compareImg = Image(os.environ["DATA"] + "/1x2x2-diff.nrrd")
+    img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/1x2x2-diff.nrrd")
 
-  return img.compare(compareImg, tolerance=1.0)
+    return img.compare(compareImg, tolerance=1.0)
+
 
 val = compareTest2()
 
 if val is False:
-  print("compareTest2 failed")
-  sys.exit(1)
+    print("compareTest2 failed")
+    sys.exit(1)
+
 
 def comparefailTest():
-  img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
+    img = Image(os.environ["DATA"] + "/1x2x2.nrrd")
 
-  compareImg = Image(os.environ["DATA"] + "/la-bin.nrrd")
+    compareImg = Image(os.environ["DATA"] + "/la-bin.nrrd")
 
-  return img.compare(compareImg)
+    return img.compare(compareImg)
+
 
 try:
-  val = comparefailTest()
-  sys.exit(0)
+    val = comparefailTest()
+    sys.exit(0)
 except TypeError:
-  sys.exit(1)
+    sys.exit(1)

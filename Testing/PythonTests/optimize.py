@@ -1,17 +1,19 @@
+import shapeworks
 import os
 import numpy
 
 os.chdir(os.environ["DATA"] + "/simple")
 
-import shapeworks
 opt = shapeworks.Optimize()
 opt.LoadParameterFile("simple.xml")
 
+
 def callback():
-    #print("python callback") (please don't print anything unless test fails)
+    # print("python callback") (please don't print anything unless test fails)
     particles = opt.GetParticleSystem()
-    #print(type(particles))
-    #print(particles)
+    # print(type(particles))
+    # print(particles)
+
 
 opt.SetIterationCallbackFunction(callback)
 opt.Run()

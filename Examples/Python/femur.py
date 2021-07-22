@@ -14,6 +14,7 @@ import shapeworks as sw
 import OptimizeUtils
 import AnalyzeUtils
 
+
 def Run_Pipeline(args):
     print("\nStep 1. Extract Data\n")
     """
@@ -35,7 +36,7 @@ def Run_Pipeline(args):
         mesh_files = sorted(glob.glob(output_directory +
                             dataset_name + "/meshes/*.ply"))[:3]
         image_files = sorted(glob.glob(output_directory +
-                            dataset_name + "/images/*.nrrd"))[:3]
+                                       dataset_name + "/images/*.nrrd"))[:3]
     # else download the entire dataset
     else:
         sw.data.download_and_unzip_dataset(dataset_name, output_directory)
@@ -46,7 +47,8 @@ def Run_Pipeline(args):
 
         # Select data if using subsample
         if args.use_subsample:
-            sample_idx = sw.data.sample_meshes(mesh_files, int(args.num_subsample))
+            sample_idx = sw.data.sample_meshes(
+                mesh_files, int(args.num_subsample))
             mesh_files = [mesh_files[i] for i in sample_idx]
 
     # If skipping grooming, use the pregroomed distance transforms from the portal
@@ -109,7 +111,8 @@ def Run_Pipeline(args):
             for mesh_filename in mesh_files:
                 print('Loading: ' + mesh_filename)
                 # get current shape name
-                names.append(os.path.basename(mesh_filename).replace('.ply', ''))
+                names.append(os.path.basename(
+                    mesh_filename).replace('.ply', ''))
                 # load mesh
                 mesh = sw.Mesh(mesh_filename)
                 # append to the mesh list
@@ -257,25 +260,25 @@ def Run_Pipeline(args):
                 # second we apply the computed transformation, note that shape_seg has
                 # already been antialiased, so we can directly apply the transformation
                 seg.applyTransform(rigidTransform,
-                                         ref_seg.origin(),  ref_seg.dims(),
-                                         ref_seg.spacing(), ref_seg.coordsys(),
-                                         sw.InterpolationType.Linear)
+                                   ref_seg.origin(),  ref_seg.dims(),
+                                   ref_seg.spacing(), ref_seg.coordsys(),
+                                   sw.InterpolationType.Linear)
                 # then turn antialized-tranformed segmentation to a binary segmentation
                 seg.binarize()
 
                 image.applyTransform(rigidTransform,
-                                         ref_seg.origin(),  ref_seg.dims(),
-                                         ref_seg.spacing(), ref_seg.coordsys(),
-                                         sw.InterpolationType.Linear)
+                                     ref_seg.origin(),  ref_seg.dims(),
+                                     ref_seg.spacing(), ref_seg.coordsys(),
+                                     sw.InterpolationType.Linear)
                 """
                 Grooming Step 9: Apply clipping
                 """
                 print("Clipping segmentation " + name)
                 cutting_plane_points = cutting_plane_points.flatten()
                 seg.clip([cutting_plane_points[0], cutting_plane_points[1], cutting_plane_points[2]],
-                [cutting_plane_points[3], cutting_plane_points[4],
-                    cutting_plane_points[5]],
-                [cutting_plane_points[6], cutting_plane_points[7], cutting_plane_points[8]], 0.0)
+                         [cutting_plane_points[3], cutting_plane_points[4],
+                          cutting_plane_points[5]],
+                         [cutting_plane_points[6], cutting_plane_points[7], cutting_plane_points[8]], 0.0)
 
             """
             Grooming Step 10: Finding the largest bounding box
@@ -340,7 +343,8 @@ def Run_Pipeline(args):
             for mesh_filename in mesh_files:
                 print('Loading: ' + mesh_filename)
                 # get current shape name
-                names.append(os.path.basename(mesh_filename).replace('.ply', ''))
+                names.append(os.path.basename(
+                    mesh_filename).replace('.ply', ''))
                 # load mesh
                 mesh = sw.Mesh(mesh_filename)
                 # append to the mesh list
@@ -356,7 +360,8 @@ def Run_Pipeline(args):
                 """
                 if "R" in name:
                     print("Reflecting " + name)
-                    arr = mesh.center(); center = [arr[0], arr[1], arr[2]]
+                    arr = mesh.center()
+                    center = [arr[0], arr[1], arr[2]]
                     mesh.reflect(sw.X)
 
             seg_list = []
@@ -440,9 +445,9 @@ def Run_Pipeline(args):
                 # second we apply the computed transformation, note that shape_seg has
                 # already been antialiased, so we can directly apply the transformation
                 seg.applyTransform(rigidTransform,
-                                         ref_seg.origin(),  ref_seg.dims(),
-                                         ref_seg.spacing(), ref_seg.coordsys(),
-                                         sw.InterpolationType.Linear)
+                                   ref_seg.origin(),  ref_seg.dims(),
+                                   ref_seg.spacing(), ref_seg.coordsys(),
+                                   sw.InterpolationType.Linear)
                 # then turn antialized-tranformed segmentation to a binary segmentation
                 seg.binarize()
 
@@ -452,9 +457,9 @@ def Run_Pipeline(args):
                 print("Clipping segmentation " + name)
                 cutting_plane_points = cutting_plane_points.flatten()
                 seg.clip([cutting_plane_points[0], cutting_plane_points[1], cutting_plane_points[2]],
-                [cutting_plane_points[3], cutting_plane_points[4],
-                    cutting_plane_points[5]],
-                [cutting_plane_points[6], cutting_plane_points[7], cutting_plane_points[8]], 0.0)
+                         [cutting_plane_points[3], cutting_plane_points[4],
+                          cutting_plane_points[5]],
+                         [cutting_plane_points[6], cutting_plane_points[7], cutting_plane_points[8]], 0.0)
 
             """
             Grooming Step 9: Finding the largest bounding box
@@ -510,9 +515,9 @@ def Run_Pipeline(args):
     """
     Step 3: OPTIMIZE - Particle Based Optimization
 
-    Now that we have the distance transform representation of data we create 
+    Now that we have the distance transform representation of data we create
     the parameter files for the shapeworks particle optimization routine.
-    For more details on the plethora of parameters for shapeworks please refer 
+    For more details on the plethora of parameters for shapeworks please refer
     to docs/workflow/optimze.md
     http://sciinstitute.github.io/ShapeWorks/workflow/optimize.html
     """
@@ -523,27 +528,27 @@ def Run_Pipeline(args):
         os.makedirs(point_dir)
     # Create a dictionary for all the parameters required by optimization
     parameter_dictionary = {
-        "number_of_particles" : 1024,
+        "number_of_particles": 1024,
         "use_normals": 0,
         "normal_weight": 10.0,
-        "checkpointing_interval" : 200,
-        "keep_checkpoints" : 1,
-        "iterations_per_split" : 4000,
-        "optimization_iterations" : 4000,
-        "starting_regularization" : 100,
-        "ending_regularization" : 0.1,
-        "recompute_regularization_interval" : 2,
-        "domains_per_shape" : 1,
-        "domain_type" : 'image',
-        "relative_weighting" : 10,
-        "initial_relative_weighting" : 1,
-        "procrustes_interval" : 1,
-        "procrustes_scaling" : 1,
-        "save_init_splits" : 1,
-        "verbosity" : 2,
-        "use_statistics_in_init" : 0
+        "checkpointing_interval": 200,
+        "keep_checkpoints": 1,
+        "iterations_per_split": 4000,
+        "optimization_iterations": 4000,
+        "starting_regularization": 100,
+        "ending_regularization": 0.1,
+        "recompute_regularization_interval": 2,
+        "domains_per_shape": 1,
+        "domain_type": 'image',
+        "relative_weighting": 10,
+        "initial_relative_weighting": 1,
+        "procrustes_interval": 1,
+        "procrustes_scaling": 1,
+        "save_init_splits": 1,
+        "verbosity": 2,
+        "use_statistics_in_init": 0
     }
-     # If running a tiny test, reduce some parameters
+    # If running a tiny test, reduce some parameters
     if args.tiny_test:
         parameter_dictionary["number_of_particles"] = 32
         parameter_dictionary["optimization_iterations"] = 25

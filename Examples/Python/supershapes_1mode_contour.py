@@ -11,6 +11,7 @@ import OptimizeUtils
 import AnalyzeUtils
 from ShapeCohortGen.CohortGenerator import Supershapes2DCohortGenerator
 
+
 def Run_Pipeline(args):
     """
     Download supershapes data. Refer to `generate_supershapes` in this file to see the generation
@@ -22,38 +23,40 @@ def Run_Pipeline(args):
 
     # See the generate_supershapes() function in this file for how the data is generated
     sw.data.download_and_unzip_dataset(dataset_name, output_directory)
-    contour_files = sorted(glob.glob(output_directory + dataset_name + "/contours/*.vtp"))
+    contour_files = sorted(
+        glob.glob(output_directory + dataset_name + "/contours/*.vtp"))
 
     point_dir = output_directory + 'shape_models/'
     if not os.path.exists(point_dir):
         os.makedirs(point_dir)
 
     parameter_dictionary = {
-        "number_of_particles" : 64,
+        "number_of_particles": 64,
         "use_normals": 0,
         "normal_weight": 0.0,
-        "checkpointing_interval" : 5000,
-        "keep_checkpoints" : 0,
-        "iterations_per_split" : 100,
-        "optimization_iterations" : 500,
-        "starting_regularization" : 100,
-        "ending_regularization" : 1,
-        "recompute_regularization_interval" : 1,
-        "domains_per_shape" : 1,
-        "domain_type" : 'contour',
-        "relative_weighting" : 5,
-        "initial_relative_weighting" : 0.1,
-        "procrustes_interval" : 2,
-        "procrustes_scaling" : 0,
-        "save_init_splits" : 0,
-        "verbosity" : 3,
+        "checkpointing_interval": 5000,
+        "keep_checkpoints": 0,
+        "iterations_per_split": 100,
+        "optimization_iterations": 500,
+        "starting_regularization": 100,
+        "ending_regularization": 1,
+        "recompute_regularization_interval": 1,
+        "domains_per_shape": 1,
+        "domain_type": 'contour',
+        "relative_weighting": 5,
+        "initial_relative_weighting": 0.1,
+        "procrustes_interval": 2,
+        "procrustes_scaling": 0,
+        "save_init_splits": 0,
+        "verbosity": 3,
         "use_shape_statistics_after": 4,
-      }
+    }
 
     """
     Now we execute a single scale particle optimization function.
     """
-    [local_point_files, world_point_files] = OptimizeUtils.runShapeWorksOptimize(point_dir, contour_files, parameter_dictionary)
+    [local_point_files, world_point_files] = OptimizeUtils.runShapeWorksOptimize(
+        point_dir, contour_files, parameter_dictionary)
 
     if args.tiny_test:
         print("Done with tiny test")
@@ -61,8 +64,9 @@ def Run_Pipeline(args):
 
     print("\nStep 5. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n")
 
+    AnalyzeUtils.launchShapeWorksStudio(
+        point_dir, [], local_point_files, world_point_files)
 
-    AnalyzeUtils.launchShapeWorksStudio(point_dir, [], local_point_files, world_point_files)
 
 def generate_supershapes(out_dir):
     m = 6
