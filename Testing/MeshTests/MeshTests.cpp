@@ -534,8 +534,8 @@ TEST(MeshTests, distanceTest1)
 {
   Mesh femur(std::string(TEST_DATA_DIR) + "/femur.vtk");
   Mesh pelvis(std::string(TEST_DATA_DIR) + "/pelvis.vtk");
-  femur.distance(pelvis);
-  pelvis.distance(femur);
+  femur.vertexDistance(pelvis);
+  pelvis.vertexDistance(femur);
 
   Mesh f2p(std::string(TEST_DATA_DIR) + "/meshdistance2.vtk");
   Mesh p2f(std::string(TEST_DATA_DIR) + "/meshdistance2rev.vtk");
@@ -547,8 +547,8 @@ TEST(MeshTests, distanceTest2)
 {
   Mesh femur1(std::string(TEST_DATA_DIR) + "/m03_L_femur.ply");
   Mesh femur2(std::string(TEST_DATA_DIR) + "/m04_L_femur.ply");
-  femur1.distance(femur2, Mesh::DistanceMethod::PointToCell);
-  femur2.distance(femur1);
+  femur1.distance(femur2);
+  femur2.vertexDistance(femur1);
 
   Mesh fwd(std::string(TEST_DATA_DIR) + "/meshdistance1p2c.vtk");
   Mesh rev(std::string(TEST_DATA_DIR) + "/meshdistance1rev.vtk");
@@ -606,7 +606,7 @@ TEST(MeshTests, closestpointTest1)
 {
   Mesh ellipsoid(std::string(TEST_DATA_DIR) + "/ellipsoid_0.ply");
   ellipsoid.computeNormals();
-  auto normals = ellipsoid.getField<vtkDataArray>("Normals");
+  auto normals = ellipsoid.getField("Normals");
   auto n = normals->GetTuple3(42);
   auto v = makeVector({n[0], n[1], n[2]});
   auto p = ellipsoid.getPoint(42);
@@ -620,7 +620,7 @@ TEST(MeshTests, closestpointTest2)
 {
   Mesh ellipsoid(std::string(TEST_DATA_DIR) + "/sphere_highres.ply");
   ellipsoid.computeNormals();
-  auto normals = ellipsoid.getField<vtkDataArray>("Normals");
+  auto normals = ellipsoid.getField("Normals");
   auto n = normals->GetTuple3(42);
   auto v = makeVector({n[0], n[1], n[2]});
   auto p = ellipsoid.getPoint(42);

@@ -3,8 +3,8 @@
 #include "Shapeworks.h"
 #include "ImageUtils.h"
 
-class vtkCellLocator;
-#include <vtkPointData.h>
+class vtkStaticCellLocator;
+class vtkKdTreePointLocator;
 
 namespace shapeworks {
 
@@ -56,7 +56,7 @@ public:
   Mesh& reflect(const Axis &axis, const Vector3 &origin = makeVector({ 0.0, 0.0, 0.0 }));
 
   /// creates a transform based on transform type
-  MeshTransform createTransform(const Mesh &target, XFormType type = IterativeClosestPoint, AlignmentType align = Similarity, unsigned iterations = 10);
+  MeshTransform createTransform(const Mesh &target, XFormType type = IterativeClosestPoint, AlignmentType align = Similarity, unsigned iterations = 10) const;
 
   /// applies the given transformation to the mesh
   Mesh& applyTransform(const MeshTransform transform);
@@ -82,8 +82,11 @@ public:
   /// fix element winding of mesh
   Mesh& fixElement();
 
-  /// computes surface to surface distance, compute method: PointToPoint (default) or PointToCell
-  Mesh& distance(const Mesh &target, const DistanceMethod method = PointToPoint);
+  /// computes PointToPoint distance (between vertices of this mesh and vertices of target mesh)
+  Field vertexDistance(const Mesh &target) const;
+
+  /// computes closest point on target mesh (on a face) from each vertex in this mesh
+  Field distance(const Mesh &target) const;
 
   /// clips a mesh using a cutting plane resulting in a closed surface
   Mesh& clipClosedSurface(const Plane plane);
@@ -92,22 +95,22 @@ public:
   Mesh& computeNormals();
 
   /// returns closest point on a face in the mesh to the given point in space
-  Point3 closestPoint(const Point3 point);
+  Point3 closestPoint(const Point3 point) const;
 
   /// returns closest point id in this mesh to the given point in space
-  int closestPointId(const Point3 point);
+  int closestPointId(const Point3 point) const;
 
   /// computes geodesic distance between two vertices (specified by their indices) on mesh
-  double geodesicDistance(int source, int target);
+  double geodesicDistance(int source, int target) const;
 
   /// computes geodesic distance between a point (landmark) and each vertex on mesh
-  Field geodesicDistance(const Point3 landmark);
+  Field geodesicDistance(const Point3 landmark) const;
 
   /// computes geodesic distance between a set of points (curve) and each vertex on mesh
-  Field geodesicDistance(const std::vector<Point3> curve);
+  Field geodesicDistance(const std::vector<Point3> curve) const;
 
-  /// computes and adds curvature (principal (default) or gaussian or mean)
-  Field curvature(const CurvatureType type = Principal);
+  /// computes curvature using principal (default) or gaussian or mean algorithms
+  Field curvature(const CurvatureType type = Principal) const;
 
   /// rasterizes specified region to create binary image of desired dims (default: unit spacing)
   Image toImage(PhysicalRegion region = PhysicalRegion(), Point spacing = Point({1., 1., 1.})) const;
@@ -153,15 +156,10 @@ public:
   Mesh& setFieldForFaces(std::string name, Array array);
 
   /// gets a pointer to the requested field, null if field doesn't exist
-  template<typename T>
-  vtkSmartPointer<T> getField(const std::string& name) const
-  {
-    if (mesh->GetPointData()->GetNumberOfArrays() < 1)
-      throw std::invalid_argument("Mesh has no fields.");
+  Field getField(const std::string& name) const;
 
-    auto rawarr = mesh->GetPointData()->GetArray(name.c_str());
-    return rawarr;
-  }
+  /// gets a pointer to the requested field, null if field doesn't exist
+  Field getFieldForFaces(const std::string& name) const;
 
   /// sets the given index of field to value
   void setFieldValue(const std::string& name, int idx, double value);
@@ -169,20 +167,12 @@ public:
   /// gets the value at the given index of field (NOTE: returns first component of vector fields)
   double getFieldValue(const std::string& name, int idx) const;
 
-  /// gets the multi value at the given index of field
+  /// gets the multi value at the given index of [vertex] field
   Eigen::VectorXd getMultiFieldValue(const std::string& name, int idx) const;
 
   /// returns the range of the given field (NOTE: returns range of first component of vector fields)
+  // TODO: along with shapeworks::mean and stddev, this should also be a member of the Field class
   std::vector<double> getFieldRange(const std::string& name) const;
-
-  /// returns the mean the given field
-  double getFieldMean(const std::string& name) const;
-
-  /// returns the standard deviation of the given field
-  double getFieldStd(const std::string& name) const;
-
-  // fields of mesh faces //
-  // todo: add support for fields of mesh faces (ex: their normals)
 
   // mesh comparison //
 
@@ -214,9 +204,11 @@ public:
   /// Splits the mesh for FFCs by setting scalar and vector fields
   bool splitMesh(std::vector< std::vector< Eigen::Vector3d > > boundaries, Eigen::Vector3d query, size_t dom, size_t num);
 
-  /// Gets values and gradients for FFCs
-  double getFFCValue(Eigen::Vector3d query);
-  Eigen::Vector3d getFFCGradient(Eigen::Vector3d query);
+  /// Gets values for FFCs
+  double getFFCValue(Eigen::Vector3d query) const;
+
+  /// Gets gradients for FFCs
+  Eigen::Vector3d getFFCGradient(Eigen::Vector3d query) const;
 
   /// Formats mesh into an IGL format
   vtkSmartPointer<vtkPoints> getIGLMesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F) const; // Copied directly from VtkMeshWrapper. this->poly_data_ becomes this->mesh. // WARNING: Copied directly from Meshwrapper. TODO: When refactoring, take this into account.
@@ -229,21 +221,26 @@ private:
   static MeshType read(const std::string& pathname);
 
   /// Creates transform from source mesh to target using ICP registration
-  MeshTransform createRegistrationTransform(const Mesh &target, AlignmentType align = Similarity, unsigned iterations = 10);
+  MeshTransform createRegistrationTransform(const Mesh &target, AlignmentType align = Similarity, unsigned iterations = 10) const;
 
   MeshType mesh;
 
-  /// This locator member is used for FFCs which queries repeatedly
-  vtkSmartPointer<vtkCellLocator> locator;
+  /// This locator member is used for functions that query for cells repeatedly
+  void initCellLocator() const;
+  mutable vtkSmartPointer<vtkStaticCellLocator> cellLocator;
+
+  /// This locator member is used for functions that query for points repeatedly
+  void initPointLocator() const;
+  mutable vtkSmartPointer<vtkKdTreePointLocator> pointLocator;
 
   /// Computes the gradient vector field for FFCs w.r.t the boundary
-  std::vector<Eigen::Matrix3d> setGradientFieldForFFCs(vtkSmartPointer<vtkDoubleArray> absvalues, Eigen::MatrixXd V, Eigen::MatrixXi F);
+  std::vector<Eigen::Matrix3d> setGradientFieldForFFCs(vtkSmartPointer<vtkDoubleArray> absvalues, Eigen::MatrixXd V, Eigen::MatrixXi F) const;
 
   /// Computes scalar distance field w.r.t. the boundary
-  vtkSmartPointer<vtkDoubleArray> setDistanceToBoundaryValueFieldForFFCs(vtkSmartPointer<vtkDoubleArray> values, vtkSmartPointer<vtkPoints> points, std::vector<size_t> boundaryVerts, vtkSmartPointer<vtkDoubleArray> inout, Eigen::MatrixXd V, Eigen::MatrixXi F, size_t dom);
+  vtkSmartPointer<vtkDoubleArray> setDistanceToBoundaryValueFieldForFFCs(vtkSmartPointer<vtkDoubleArray> values, vtkSmartPointer<vtkPoints> points, std::vector<size_t> boundaryVerts, vtkSmartPointer<vtkDoubleArray> inout, Eigen::MatrixXd V, Eigen::MatrixXi F, size_t dom);  // fixme: sets value, returns absvalues, not sure why
 
   /// Computes whether point is inside or outside the boundary
-  vtkSmartPointer<vtkDoubleArray> computeInOutForFFCs(Eigen::Vector3d query, MeshType halfmesh);
+  vtkSmartPointer<vtkDoubleArray> computeInOutForFFCs(Eigen::Vector3d query, MeshType halfmesh); // similar issues to above
 
   /// Computes baricentric coordinates given a query point and a face number
   Eigen::Vector3d computeBarycentricCoordinates(const Eigen::Vector3d& pt, int face) const; // // WARNING: Copied directly from Meshwrapper. TODO: When refactoring, take this into account.

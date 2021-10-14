@@ -665,13 +665,6 @@ bool Distance::execute(const optparse::Values &options, SharedCommandData &share
   bool summary = static_cast<bool>(options.get("summary"));
 
   std::string methodopt(options.get("method"));
-  auto method{Mesh::PointToPoint};
-  if (methodopt == "point-to-point") method = Mesh::PointToPoint;
-  else if (methodopt == "point-to-cell") method = Mesh::PointToCell;
-  else {
-    std::cerr << "no such distance method: " << methodopt << std::endl;
-    return false;
-  }
 
   std::string otherMesh = static_cast<std::string>(options.get("name"));
   if (otherMesh == "")
@@ -681,11 +674,21 @@ bool Distance::execute(const optparse::Values &options, SharedCommandData &share
   }
 
   Mesh other(otherMesh);
-  sharedData.mesh->distance(other, method);
+  Field distance;
+  if (methodopt == "point-to-point") {
+    distance = sharedData.mesh->vertexDistance(other);
+  }
+  else if (methodopt == "point-to-cell") {
+    distance = sharedData.mesh->distance(other);
+  }
+  else {
+    std::cerr << "no such distance method: " << methodopt << std::endl;
+    return false;
+  }
 
   if (summary)
   {
-    auto range = sharedData.mesh->getFieldRange("distance");
+    auto range = sharedData.mesh->getFieldRange("distance");  // TODO: we need to remove getFieldRange like we did mean and stddev (put it in Shapeworks.h/cpp)
     auto dist = std::max(range[0], range[1]);
     std::cout << "Maximum distance to target mesh: " << dist << std::endl;
   }
@@ -957,7 +960,7 @@ bool GetField::execute(const optparse::Values &options, SharedCommandData &share
 
   std::string name = static_cast<std::string>(options.get("name"));
 
-  sharedData.field = sharedData.mesh->getField<vtkDataArray>(name);
+  sharedData.field = sharedData.mesh->getField(name);
   return true;
 }
 
@@ -1117,7 +1120,7 @@ bool FieldMean::execute(const optparse::Values &options, SharedCommandData &shar
 
   std::string name = static_cast<std::string>(options.get("name"));
 
-  std::cout << sharedData.mesh->getFieldMean(name) << "\n";
+  std::cout << mean(sharedData.mesh->getField(name)) << "\n";
   return sharedData.validMesh();
 }
 
@@ -1145,7 +1148,7 @@ bool FieldStd::execute(const optparse::Values &options, SharedCommandData &share
 
   std::string name = static_cast<std::string>(options.get("name"));
 
-  std::cout << sharedData.mesh->getFieldStd(name) << "\n";
+  std::cout << stddev(sharedData.mesh->getField(name)) << "\n";
   return sharedData.validMesh();
 }
 
