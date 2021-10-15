@@ -534,8 +534,8 @@ TEST(MeshTests, distanceTest1)
 {
   Mesh femur(std::string(TEST_DATA_DIR) + "/femur.vtk");
   Mesh pelvis(std::string(TEST_DATA_DIR) + "/pelvis.vtk");
-  femur.vertexDistance(pelvis);
-  pelvis.vertexDistance(femur);
+  femur.setField("distance", femur.vertexDistance(pelvis));
+  pelvis.setField("distance", pelvis.vertexDistance(femur));
 
   Mesh f2p(std::string(TEST_DATA_DIR) + "/meshdistance2.vtk");
   Mesh p2f(std::string(TEST_DATA_DIR) + "/meshdistance2rev.vtk");
@@ -547,8 +547,8 @@ TEST(MeshTests, distanceTest2)
 {
   Mesh femur1(std::string(TEST_DATA_DIR) + "/m03_L_femur.ply");
   Mesh femur2(std::string(TEST_DATA_DIR) + "/m04_L_femur.ply");
-  femur1.distance(femur2);
-  femur2.vertexDistance(femur1);
+  femur1.setField("distance", femur1.distance(femur2));
+  femur2.setField("distance", femur2.vertexDistance(femur1));
 
   Mesh fwd(std::string(TEST_DATA_DIR) + "/meshdistance1p2c.vtk");
   Mesh rev(std::string(TEST_DATA_DIR) + "/meshdistance1rev.vtk");
@@ -668,8 +668,8 @@ TEST(MeshTests, fieldTest2)
 TEST(MeshTests, fieldTest3)
 {
   Mesh mesh(std::string(TEST_DATA_DIR) + "/la-bin.vtk");
-  std::vector<double> scalarRange = mesh.getFieldRange("scalars");
-  std::vector<double> normalsRange = mesh.getFieldRange("Normals");
+  std::vector<double> scalarRange = range(mesh.getField("scalars"));
+  std::vector<double> normalsRange = range(mesh.getField("Normals"));
 
   ASSERT_TRUE(scalarRange[0]==1);
   ASSERT_TRUE(scalarRange[1]==1);
@@ -798,7 +798,7 @@ TEST(MeshTests, findReferenceMeshTest)
   ASSERT_EQ(ref, 2);
 }
 
-TEST(MeshTests,addMesh)
+TEST(MeshTests, addMesh)
 {
   Mesh mesh1(std::string(TEST_DATA_DIR) + "/sphere_00.ply");
   Mesh mesh2(std::string(TEST_DATA_DIR) + "/sphere_00_translated.ply");
@@ -806,5 +806,4 @@ TEST(MeshTests,addMesh)
   Mesh baseline(std::string(TEST_DATA_DIR) + "/sphere_add.ply");
 
   ASSERT_TRUE(mesh1 == baseline);
-  
 }

@@ -47,7 +47,7 @@
 #include <vtkImageStencil.h>
 #include <vtkDoubleArray.h>
 #include <vtkKdTreePointLocator.h>
-#include <vtkStaticCellLocator.h>
+#include <vtkCellLocator.h>
 #include <vtkGenericCell.h>
 #include <vtkPlaneCollection.h>
 #include <vtkClipClosedSurface.h>
@@ -484,7 +484,7 @@ Field Mesh::distance(const Mesh &target) const
   // Find the nearest neighbors to each point and compute distance between them
   Point currentPoint, closestPoint;
 
-  vtkSmartPointer<vtkStaticCellLocator> targetCellLocator = vtkSmartPointer<vtkStaticCellLocator>::New();
+  vtkSmartPointer<vtkCellLocator> targetCellLocator = vtkSmartPointer<vtkCellLocator>::New();
   targetCellLocator->SetDataSet(target.mesh);
   targetCellLocator->BuildLocator();
 
@@ -549,7 +549,7 @@ void Mesh::initCellLocator() const
 {
   if (!this->cellLocator)
   {
-    this->cellLocator = vtkSmartPointer<vtkStaticCellLocator>::New();
+    this->cellLocator = vtkSmartPointer<vtkCellLocator>::New();
     this->cellLocator->SetDataSet(this->mesh);
     this->cellLocator->BuildLocator();
   }
@@ -942,25 +942,6 @@ Eigen::VectorXd Mesh::getMultiFieldValue(const std::string& name, int idx) const
     }
     else
       throw std::invalid_argument("Requested index in field is out of range");
-}
-
-std::vector<double> Mesh::getFieldRange(const std::string& name) const
-{
-  if (name.empty())
-    throw std::invalid_argument("Provide name for field");
-
-  if (mesh->GetPointData()->GetNumberOfArrays() < 1)
-    throw std::invalid_argument("Mesh has no fields for which to compute range.");
-
-  std::vector<double> range(2);
-
-  auto arr = mesh->GetPointData()->GetArray(name.c_str());
-  if (!arr)
-    throw std::invalid_argument("Field does not exist.");
-
-  arr->GetRange(&range[0]);
-
-  return range;
 }
 
 bool Mesh::compareAllPoints(const Mesh &other_mesh) const

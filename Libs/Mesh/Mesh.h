@@ -3,7 +3,7 @@
 #include "Shapeworks.h"
 #include "ImageUtils.h"
 
-class vtkStaticCellLocator;
+class vtkCellLocator;
 class vtkKdTreePointLocator;
 
 namespace shapeworks {
@@ -12,7 +12,6 @@ class Mesh
 {
 public:
   enum AlignmentType { Rigid, Similarity, Affine };
-  enum DistanceMethod { PointToPoint, PointToCell };
   enum CurvatureType { Principal, Gaussian, Mean };
 
   using MeshType = vtkSmartPointer<vtkPolyData>;
@@ -170,10 +169,6 @@ public:
   /// gets the multi value at the given index of [vertex] field
   Eigen::VectorXd getMultiFieldValue(const std::string& name, int idx) const;
 
-  /// returns the range of the given field (NOTE: returns range of first component of vector fields)
-  // TODO: along with shapeworks::mean and stddev, this should also be a member of the Field class
-  std::vector<double> getFieldRange(const std::string& name) const;
-
   // mesh comparison //
 
   /// compare if values of the points in two (corresponding) meshes are (eps)equal
@@ -227,7 +222,7 @@ private:
 
   /// This locator member is used for functions that query for cells repeatedly
   void initCellLocator() const;
-  mutable vtkSmartPointer<vtkStaticCellLocator> cellLocator;
+  mutable vtkSmartPointer<vtkCellLocator> cellLocator;
 
   /// This locator member is used for functions that query for points repeatedly
   void initPointLocator() const;
@@ -245,12 +240,9 @@ private:
   /// Computes baricentric coordinates given a query point and a face number
   Eigen::Vector3d computeBarycentricCoordinates(const Eigen::Vector3d& pt, int face) const; // // WARNING: Copied directly from Meshwrapper. TODO: When refactoring, take this into account.
 
-
 };
 
 /// stream insertion operators for Mesh
 std::ostream& operator<<(std::ostream &os, const Mesh& mesh);
-
-
 
 } // shapeworks

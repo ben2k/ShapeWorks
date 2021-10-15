@@ -674,12 +674,12 @@ bool Distance::execute(const optparse::Values &options, SharedCommandData &share
   }
 
   Mesh other(otherMesh);
-  Field distance;
+
   if (methodopt == "point-to-point") {
-    distance = sharedData.mesh->vertexDistance(other);
+    sharedData.field = sharedData.mesh->vertexDistance(other);
   }
   else if (methodopt == "point-to-cell") {
-    distance = sharedData.mesh->distance(other);
+    sharedData.field = sharedData.mesh->distance(other);
   }
   else {
     std::cerr << "no such distance method: " << methodopt << std::endl;
@@ -688,8 +688,8 @@ bool Distance::execute(const optparse::Values &options, SharedCommandData &share
 
   if (summary)
   {
-    auto range = sharedData.mesh->getFieldRange("distance");  // TODO: we need to remove getFieldRange like we did mean and stddev (put it in Shapeworks.h/cpp)
-    auto dist = std::max(range[0], range[1]);
+    auto distRange = range(sharedData.field);
+    auto dist = std::max(distRange[0], distRange[1]);
     std::cout << "Maximum distance to target mesh: " << dist << std::endl;
   }
 
@@ -1091,8 +1091,8 @@ bool FieldRange::execute(const optparse::Values &options, SharedCommandData &sha
 
   std::string name = static_cast<std::string>(options.get("name"));
 
-  std::vector<double> range = sharedData.mesh->getFieldRange(name);
-  std::cout << "[" << range[0] << "," << range[1] << "]\n";
+  std::vector<double> fieldRange = range(sharedData.mesh->getField(name));
+  std::cout << "[" << fieldRange[0] << "," << fieldRange[1] << "]\n";
   return sharedData.validMesh();
 }
 

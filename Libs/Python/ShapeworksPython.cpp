@@ -127,6 +127,12 @@ PYBIND11_MODULE(shapeworks_py, m)
         },
         "compute (single-component) standard deviation of field");
 
+  m.def("range",
+        [](py::array& field) {
+          return range(pyToArr(field, false/*take_ownership*/));
+        },
+        "compute (single-component) range of field");
+
   // Image
   py::class_<Image>(m, "Image")
     .def(py::init<const std::string &>())
@@ -866,13 +872,6 @@ PYBIND11_MODULE(shapeworks_py, m)
   .export_values();
   ;
 
-  // Mesh::DistanceMethod
-  py::enum_<Mesh::DistanceMethod>(mesh, "DistanceMethod")
-  .value("PointToPoint", Mesh::DistanceMethod::PointToPoint)
-  .value("PointToCell", Mesh::DistanceMethod::PointToCell)
-  .export_values();
-  ;
-
   // Mesh::CurvatureType
   py::enum_<Mesh::CurvatureType>(mesh, "CurvatureType")
   .value("Principal", Mesh::CurvatureType::Principal)
@@ -999,12 +998,18 @@ PYBIND11_MODULE(shapeworks_py, m)
        "fix element winding of mesh")
 
   .def("vertexDistance",
-       &Mesh::vertexDistance,
+       [](Mesh &mesh, const Mesh &target) -> decltype(auto) {
+          auto array = mesh.vertexDistance(target);
+          return arrToPy(array, MOVE_ARRAY);
+       },
        "computes distance from vertices of this mesh to closest vertices of target mesh",
        "target"_a)
 
   .def("distance",
-       &Mesh::distance,
+       [](Mesh &mesh, const Mesh &target) -> decltype(auto) {
+          auto array = mesh.distance(target);
+          return arrToPy(array, MOVE_ARRAY);
+       },
        "computes distance from vertices of this mesh to closest point on faces of target mesh",
        "target"_a)
 
@@ -1164,11 +1169,6 @@ PYBIND11_MODULE(shapeworks_py, m)
        &Mesh::getMultiFieldValue,
        "gets the vector value at the given index of field",
        "idx"_a, "name"_a)
-
-  .def("getFieldRange",
-       &Mesh::getFieldRange,
-       "returns the range of the given field",
-       "name"_a)
 
   .def("compareField",
        &Mesh::compareField,

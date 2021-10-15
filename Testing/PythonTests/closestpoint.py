@@ -1,5 +1,6 @@
 import os
 import sys
+import builtins
 import numpy as np
 from shapeworks import *
 
@@ -11,8 +12,8 @@ def closestpointTest1():
   normals = mesh.getField("Normals")
   p = mesh.getPoint(42)
   pNew = []
-  for i in range(3):
-      pNew.append(p[i] + normals[42][i])
+  for i in builtins.range(3):
+    pNew.append(p[i] + normals[42][i])
   closeToP = mesh.closestPoint(pNew)
 
   return np.linalg.norm(p-closeToP) == 0.0
@@ -25,8 +26,8 @@ def closestpointTest2():
   normals = mesh.getField("Normals")
   p = mesh.getPoint(42)
   pNew = []
-  for i in range(3):
-      pNew.append(p[i] - normals[42][i] * 1.1)
+  for i in builtins.range(3):
+    pNew.append(p[i] - normals[42][i] * 1.1)
   closeToP = mesh.closestPoint(pNew)
 
   return np.linalg.norm(p-closeToP) < 1e-4

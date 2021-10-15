@@ -168,6 +168,12 @@ double stddev(const Field field) {
   return sqrt(squaredDiff / N);
 }
 
+std::vector<double> range(const Field field) {
+  std::vector<double> r(2);
+  field->GetRange(&r[0]);
+  return r;
+}
+
 TransformPtr createTransform(const Matrix33 &mat, const Vector3 &translate) 
 {
   AffineTransformPtr xform(AffineTransform::New());

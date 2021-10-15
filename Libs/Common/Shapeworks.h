@@ -112,6 +112,9 @@ double mean(const Field field);
 /// compute (single-component) standard deviation of field
 double stddev(const Field field);
 
+/// compute (single-component) range of field
+std::vector<double> range(const Field field);
+
 /// Handy functions to perform operations on Points and Vectors with which ITK is more restrictive
 class Image;
 
