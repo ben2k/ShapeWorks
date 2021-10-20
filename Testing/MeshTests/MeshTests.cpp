@@ -534,8 +534,8 @@ TEST(MeshTests, distanceTest1)
 {
   Mesh femur(std::string(TEST_DATA_DIR) + "/femur.vtk");
   Mesh pelvis(std::string(TEST_DATA_DIR) + "/pelvis.vtk");
-  femur.setField("distance", femur.vertexDistance(pelvis));
-  pelvis.setField("distance", pelvis.vertexDistance(femur));
+  femur.setField("distance", femur.distance(pelvis, Mesh::DistanceMethod::PointToPoint));
+  pelvis.setField("distance", pelvis.distance(femur, Mesh::DistanceMethod::PointToPoint));
 
   Mesh f2p(std::string(TEST_DATA_DIR) + "/meshdistance2.vtk");
   Mesh p2f(std::string(TEST_DATA_DIR) + "/meshdistance2rev.vtk");
@@ -547,8 +547,8 @@ TEST(MeshTests, distanceTest2)
 {
   Mesh femur1(std::string(TEST_DATA_DIR) + "/m03_L_femur.ply");
   Mesh femur2(std::string(TEST_DATA_DIR) + "/m04_L_femur.ply");
-  femur1.setField("distance", femur1.distance(femur2));
-  femur2.setField("distance", femur2.vertexDistance(femur1));
+  femur1.setField("distance", femur1.distance(femur2, Mesh::DistanceMethod::PointToCell));
+  femur2.setField("distance", femur2.distance(femur1, Mesh::DistanceMethod::PointToPoint));
 
   Mesh fwd(std::string(TEST_DATA_DIR) + "/meshdistance1p2c.vtk");
   Mesh rev(std::string(TEST_DATA_DIR) + "/meshdistance1rev.vtk");

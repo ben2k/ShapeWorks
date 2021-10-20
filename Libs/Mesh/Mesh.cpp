@@ -201,8 +201,7 @@ Mesh& Mesh::coverage(const Mesh &otherMesh, bool allowBackIntersections, double 
   vtkOut.SetOptions(ops);
 
   this->mesh = vtkOut.ExportToVTK(*surf1);
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
 
   return *this;
 }
@@ -225,8 +224,7 @@ Mesh &Mesh::smooth(int iterations, double relaxation)
   // must regenerate normals after smoothing
   computeNormals();
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -240,11 +238,11 @@ Mesh& Mesh::smoothSinc(int iterations, double passband)
   smoother->SetPassBand(passband);
   smoother->Update();
   this->mesh = smoother->GetOutput();
+
   // must regenerate normals after smoothing
   computeNormals();
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -260,8 +258,7 @@ Mesh &Mesh::decimate(double reduction, double angle, bool preserveTopology)
   decimator->Update();
   this->mesh = decimator->GetOutput();
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -280,8 +277,7 @@ Mesh &Mesh::cvdDecimate(double percentage)
   FEVTKExport vtkOut;
   this->mesh = vtkOut.ExportToVTK(*meshFE);
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -308,8 +304,6 @@ Mesh &Mesh::reflect(const Axis &axis, const Vector3 &origin)
   transform->Scale(scale[0], scale[1], scale[2]);
   transform->Translate(origin[0], origin[1], origin[2]);
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
   return invertNormals().applyTransform(transform);
 }
 
@@ -322,7 +316,7 @@ MeshTransform Mesh::createTransform(const Mesh &target, XFormType type, Mesh::Al
       transform = createRegistrationTransform(target, align, iterations);
       break;
     default:
-      throw std::invalid_argument("Unknown Mesh::TranformType");
+      throw invalid_argument("Unknown Mesh::TranformType");
   }
 
   return transform;
@@ -337,8 +331,7 @@ Mesh &Mesh::applyTransform(const MeshTransform transform)
   resampler->Update();
   this->mesh = resampler->GetOutput();
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -358,8 +351,7 @@ Mesh &Mesh::fillHoles()
   // Restore the original normals
   mesh->GetPointData()->SetNormals(origNormal);
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -371,8 +363,7 @@ Mesh &Mesh::probeVolume(const Image &image)
   probeFilter->Update();
   this->mesh = probeFilter->GetPolyDataOutput();
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -384,8 +375,7 @@ Mesh &Mesh::clip(const Plane plane)
   clipper->Update();
   this->mesh = clipper->GetOutput();
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -417,8 +407,6 @@ PhysicalRegion Mesh::boundingBox() const
     bbox.max[i] = bb[2*i+1];
   }
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
   return bbox;
 }
 
@@ -437,40 +425,11 @@ Mesh& Mesh::fixElement()
   FEVTKExport vtkOut;
   this->mesh = vtkOut.ExportToVTK(*meshFix);
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
-Field Mesh::vertexDistance(const Mesh &target) const
-{
-  if (target.numPoints() == 0 || numPoints() == 0)
-    throw std::invalid_argument("meshes must have points");
-
-  // allocate Array to store distances from each point to target
-  vtkSmartPointer<vtkDoubleArray> distance = vtkSmartPointer<vtkDoubleArray>::New();
-  distance->SetNumberOfComponents(1);
-  distance->SetNumberOfTuples(numPoints());
-  distance->SetName("distance");
-
-  // Find the nearest neighbors to each point and compute distance between them
-  Point currentPoint, closestPoint;
-  vtkSmartPointer<vtkKdTreePointLocator> targetPointLocator = vtkSmartPointer<vtkKdTreePointLocator>::New();
-  targetPointLocator->SetDataSet(target.mesh);
-  targetPointLocator->BuildLocator();
-
-  for (int i = 0; i < numPoints(); i++)
-  {
-    mesh->GetPoint(i, currentPoint.GetDataPointer());
-    vtkIdType closestPointId = targetPointLocator->FindClosestPoint(currentPoint.GetDataPointer());
-    target.mesh->GetPoint(closestPointId, closestPoint.GetDataPointer());
-    distance->SetValue(i, length(currentPoint - closestPoint));
-  }
-
-  return distance;
-}
-
-Field Mesh::distance(const Mesh &target) const
+Field Mesh::distance(const Mesh &target, const DistanceMethod method) const
 {
   if (target.numPoints() == 0 || numPoints() == 0)
     throw std::invalid_argument("meshes must have points");
@@ -484,22 +443,51 @@ Field Mesh::distance(const Mesh &target) const
   // Find the nearest neighbors to each point and compute distance between them
   Point currentPoint, closestPoint;
 
-  vtkSmartPointer<vtkCellLocator> targetCellLocator = vtkSmartPointer<vtkCellLocator>::New();
-  targetCellLocator->SetDataSet(target.mesh);
-  targetCellLocator->BuildLocator();
-
-  double dist2;
-  vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
-  vtkIdType cellId;
-  int subId;
-
-  for (int i = 0; i < numPoints(); i++)
+  switch(method)
   {
-    mesh->GetPoint(i, currentPoint.GetDataPointer());
-    targetCellLocator->FindClosestPoint(currentPoint.GetDataPointer(), closestPoint.GetDataPointer(), cell, cellId, subId, dist2);
-    distance->SetValue(i, std::sqrt(dist2));
+    case PointToPoint:
+    {
+      vtkSmartPointer<vtkKdTreePointLocator> targetPointLocator = vtkSmartPointer<vtkKdTreePointLocator>::New();
+      targetPointLocator->SetDataSet(target.mesh);
+      targetPointLocator->BuildLocator();
+
+      for (int i = 0; i < numPoints(); i++)
+      {
+        mesh->GetPoint(i, currentPoint.GetDataPointer());
+        vtkIdType closestPointId = targetPointLocator->FindClosestPoint(currentPoint.GetDataPointer());
+        target.mesh->GetPoint(closestPointId, closestPoint.GetDataPointer());
+        distance->SetValue(i, length(currentPoint - closestPoint));
+      }
+    }
+    break;
+
+    case PointToCell:
+    {
+      vtkSmartPointer<vtkCellLocator> targetCellLocator = vtkSmartPointer<vtkCellLocator>::New();
+      targetCellLocator->SetDataSet(target.mesh);
+      targetCellLocator->BuildLocator();
+
+      double dist2;
+      vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
+      vtkIdType cellId;
+      int subId;
+
+      for (int i = 0; i < numPoints(); i++)
+      {
+        mesh->GetPoint(i, currentPoint.GetDataPointer());
+        // TODO: create and return a field of the cellIds as well as the distances
+        targetCellLocator->FindClosestPoint(currentPoint.GetDataPointer(), closestPoint.GetDataPointer(), cell, cellId, subId, dist2);
+        distance->SetValue(i, std::sqrt(dist2));
+      }
+    }
+    break;
+
+    default:
+      throw std::invalid_argument("invalid distance method");
   }
 
+  // TODO: return the two fields as a vector of Fields (since Fields are vtkSmartPointers this is cheap, no std::reference_wrappers needed).
+  // TODO^2: do the same thing for the other couple functions below that set a field and return the other field (they shouldn't be setting a field)
   return distance;
 }
 
@@ -515,8 +503,7 @@ Mesh& Mesh::clipClosedSurface(const Plane plane)
   clipper->Update();
   this->mesh = clipper->GetOutput();
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 
@@ -535,7 +522,13 @@ Mesh& Mesh::computeNormals()
   return *this;
 }
 
-void Mesh::initPointLocator() const
+void Mesh::invalidateLocators() const
+{
+  this->cellLocator = nullptr;
+  this->pointLocator = nullptr;  
+}
+
+void Mesh::updatePointLocator() const
 {
   if (!this->pointLocator)
   {
@@ -545,19 +538,19 @@ void Mesh::initPointLocator() const
   }
 }
 
-void Mesh::initCellLocator() const
+void Mesh::updateCellLocator() const
 {
   if (!this->cellLocator)
   {
     this->cellLocator = vtkSmartPointer<vtkCellLocator>::New();
     this->cellLocator->SetDataSet(this->mesh);
-    this->cellLocator->BuildLocator();
   }
+  this->cellLocator->BuildLocatorIfNeeded();
 }
 
 Point3 Mesh::closestPoint(const Point3 point) const
 {
-  this->initCellLocator();
+  this->updateCellLocator();
 
   double dist2;
   Point3 closestPoint;
@@ -571,7 +564,7 @@ Point3 Mesh::closestPoint(const Point3 point) const
 
 int Mesh::closestPointId(const Point3 point) const
 {
-  this->initPointLocator();
+  this->updatePointLocator();
 
   vtkIdType closestPointId = pointLocator->FindClosestPoint(point.GetDataPointer());
   return closestPointId;
@@ -734,9 +727,20 @@ Image Mesh::toImage(PhysicalRegion region, Point spacing) const
   return Image(imgstenc->GetOutput());
 }
 
+// change region to be padding which must be at least +1 (logical coords using spacing) larger than mesh bounds (verify when called)
+//More info from #810:
+//1. to evaluate accuracy, given a mesh, compute a distance transform from *vtk[Static]CellLocator* *trimesh2* or *discregrid*, then extract isosurface (image to mesh) and compute surface2surface distance (Mesh::distance). What is the distribution of this error relative to voxel size used in conversion to distance transform?
+//2. it would be nice if we can add field to Image with face ids for each (closest) voxel (just in case we need it for projecting points on meshes or related tasks).
+//3.this is important to deprecate fids (which may already have been done)
 Image Mesh::toDistanceTransform(PhysicalRegion region, Point spacing) const
 {
   // TODO: convert directly to DT (github #810)
+  // 1) change signature to specify padding (default >= 1)
+  //    check that padding is >= 1 and throw exception if not
+  //    compute region
+  // 2) creat an empty image of the correct size (no longer using toImage)
+  // 3) go through each voxel's location with a loop nearly identical to the one above in Mesh::distance (using the PointToCell method, setting two fields in the image: the distance and the cell id.
+  
   Image image(toImage(region, spacing));
   image.antialias(50, 0.00).computeDT();
   return image;
@@ -1145,7 +1149,7 @@ bool Mesh::splitMesh(std::vector<std::vector<Eigen::Vector3d> > boundaries, Eige
     vtkPoints* selectionPoints = vtkPoints::New();
     std::vector<size_t> boundaryVerts;
 
-    // this locator is continuously rebuilt, so don't use cached version
+    // the locator is continuously rebuilt during this function, so don't use the cached version
     vtkSmartPointer<vtkKdTreePointLocator> locator = vtkSmartPointer<vtkKdTreePointLocator>::New();
     locator->SetDataSet(this->mesh);
 
@@ -1226,8 +1230,6 @@ bool Mesh::splitMesh(std::vector<std::vector<Eigen::Vector3d> > boundaries, Eige
 //    std::string fnin = "dev/mesh_" + std::to_string(dom) + "_" + std::to_string(num) + "_in.vtk";
 //    this->write(fnin);
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
   return true;
 }
 
@@ -1245,7 +1247,7 @@ Eigen::Vector3d Mesh::computeBarycentricCoordinates(const Eigen::Vector3d& pt, i
 
 double Mesh::getFFCValue(Eigen::Vector3d query) const
 {
-  this->initCellLocator();
+  this->updateCellLocator();
 
   double closestPoint[3];
   vtkIdType cellId;
@@ -1273,7 +1275,7 @@ double Mesh::getFFCValue(Eigen::Vector3d query) const
 
 Eigen::Vector3d Mesh::getFFCGradient(Eigen::Vector3d query) const
 {
-  this->initCellLocator();
+  this->updateCellLocator();
 
   double closestPoint[3];
   vtkIdType cellId;
@@ -1329,7 +1331,7 @@ vtkSmartPointer<vtkDoubleArray> Mesh::computeInOutForFFCs(Eigen::Vector3d query,
   kdhalf->BuildLocator();
 
   // Create full-mesh tree
-  initPointLocator();
+  updatePointLocator();
 
   // Checking which mesh is closer to the query point. Recall that the query point must not necessarely lie on the mesh, so we check both the half mesh and the full mesh.
   double querypt[3] = {query[0], query[1], query[2]};
@@ -1530,7 +1532,7 @@ Mesh::setGradientFieldForFFCs(vtkSmartPointer<vtkDoubleArray> absvalues, Eigen::
     vf->SetTuple3(i, grads(i, 0), grads(i, 1), grads(i, 2));
   }
 
-  // maybe don't set local field since the user can do this if they want it to be part of the mesh, and the function can therefore be const. Plus, use the Mesh's function for this!
+  // don't set local field since the user can do this if they want it to be part of the mesh, and the function can therefore be const. Plus, use the Mesh's function for this!
   // this->setField("Gradient", vf);
   // this->mesh->GetCellData()->AddArray(vff);
 
@@ -1551,8 +1553,7 @@ Mesh& Mesh::operator+=(const Mesh& otherMesh)
 
   this->mesh = cleanFilter->GetOutput();
 
-  this->cellLocator = nullptr;
-  this->pointLocator = nullptr;
+  this->invalidateLocators();
   return *this;
 }
 

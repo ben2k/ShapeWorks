@@ -999,7 +999,7 @@ PYBIND11_MODULE(shapeworks_py, m)
 
   .def("vertexDistance",
        [](Mesh &mesh, const Mesh &target) -> decltype(auto) {
-          auto array = mesh.vertexDistance(target);
+          auto array = mesh.distance(target, Mesh::DistanceMethod::PointToPoint);
           return arrToPy(array, MOVE_ARRAY);
        },
        "computes distance from vertices of this mesh to closest vertices of target mesh",

@@ -676,10 +676,10 @@ bool Distance::execute(const optparse::Values &options, SharedCommandData &share
   Mesh other(otherMesh);
 
   if (methodopt == "point-to-point") {
-    sharedData.field = sharedData.mesh->vertexDistance(other);
+    sharedData.field = sharedData.mesh->distance(other, Mesh::DistanceMethod::PointToPoint);
   }
   else if (methodopt == "point-to-cell") {
-    sharedData.field = sharedData.mesh->distance(other);
+    sharedData.field = sharedData.mesh->distance(other, Mesh::DistanceMethod::PointToCell);
   }
   else {
     std::cerr << "no such distance method: " << methodopt << std::endl;

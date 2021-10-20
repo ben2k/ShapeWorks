@@ -12,6 +12,7 @@ class Mesh
 {
 public:
   enum AlignmentType { Rigid, Similarity, Affine };
+  enum DistanceMethod { PointToPoint, PointToCell };
   enum CurvatureType { Principal, Gaussian, Mean };
 
   using MeshType = vtkSmartPointer<vtkPolyData>;
@@ -81,11 +82,9 @@ public:
   /// fix element winding of mesh
   Mesh& fixElement();
 
-  /// computes PointToPoint distance (between vertices of this mesh and vertices of target mesh)
-  Field vertexDistance(const Mesh &target) const;
-
-  /// computes closest point on target mesh (on a face) from each vertex in this mesh
-  Field distance(const Mesh &target) const;
+  /// computes distance from each vertex in this mesh to the closest location
+  /// (PointToCell, the default) or closest vertex (PointToPoint) in target mesh
+  Field distance(const Mesh &target, const DistanceMethod method = PointToCell) const;
 
   /// clips a mesh using a cutting plane resulting in a closed surface
   Mesh& clipClosedSurface(const Plane plane);
@@ -94,6 +93,8 @@ public:
   Mesh& computeNormals();
 
   /// returns closest point on a face in the mesh to the given point in space
+  // TODO: add reference to indicate if point is inside or outside mesh
+  // TODO: add reference to say which face this point is on
   Point3 closestPoint(const Point3 point) const;
 
   /// returns closest point id in this mesh to the given point in space
@@ -220,12 +221,15 @@ private:
 
   MeshType mesh;
 
+  /// invalidate cached cell and point locators
+  void invalidateLocators() const;
+
   /// This locator member is used for functions that query for cells repeatedly
-  void initCellLocator() const;
+  void updateCellLocator() const;
   mutable vtkSmartPointer<vtkCellLocator> cellLocator;
 
   /// This locator member is used for functions that query for points repeatedly
-  void initPointLocator() const;
+  void updatePointLocator() const;
   mutable vtkSmartPointer<vtkKdTreePointLocator> pointLocator;
 
   /// Computes the gradient vector field for FFCs w.r.t the boundary
