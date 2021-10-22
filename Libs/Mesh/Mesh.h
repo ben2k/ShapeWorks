@@ -93,9 +93,10 @@ public:
   Mesh& computeNormals();
 
   /// returns closest point on a face in the mesh to the given point in space
-  // TODO: add reference to indicate if point is inside or outside mesh
-  // TODO: add reference to say which face this point is on
-  Point3 closestPoint(const Point3 point) const;
+  /// - outside will be set to indicate if point is outside the mesh
+  /// - face_id is the face on which this point is found
+  /// non-const b/c determining if outside potentially requires computing cell normals
+  Point3 closestPoint(const Point3 point, bool& outside, vtkIdType& face_id);
 
   /// returns closest point id in this mesh to the given point in space
   int closestPointId(const Point3 point) const;
@@ -221,16 +222,17 @@ private:
 
   MeshType mesh;
 
-  /// invalidate cached cell and point locators
+  /// invalidate cached cell and point locators (call when geometry changes)
   void invalidateLocators() const;
 
-  /// This locator member is used for functions that query for cells repeatedly
-  void updateCellLocator() const;
+  /// Cell locator for functions that query for cells repeatedly
+  // TODO: use vtkStaticCellLocator when vtk is upgraded to version 9
   mutable vtkSmartPointer<vtkCellLocator> cellLocator;
+  void updateCellLocator() const;
 
-  /// This locator member is used for functions that query for points repeatedly
-  void updatePointLocator() const;
+  /// Point locator for functions that query for points repeatedly
   mutable vtkSmartPointer<vtkKdTreePointLocator> pointLocator;
+  void updatePointLocator() const;
 
   /// Computes the gradient vector field for FFCs w.r.t the boundary
   std::vector<Eigen::Matrix3d> setGradientFieldForFFCs(vtkSmartPointer<vtkDoubleArray> absvalues, Eigen::MatrixXd V, Eigen::MatrixXi F) const;

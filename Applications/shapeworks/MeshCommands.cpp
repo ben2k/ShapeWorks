@@ -811,7 +811,12 @@ bool ClosestPoint::execute(const optparse::Values &options, SharedCommandData &s
                static_cast<double>(options.get("y")),
                static_cast<double>(options.get("z"))});
 
-  std::cout << "Closest point to given point on mesh: " << sharedData.mesh->closestPoint(point) << "\n";
+  bool outside = false;
+  vtkIdType face_id = -1;
+  auto closest_pt = sharedData.mesh->closestPoint(point, outside, face_id);
+  std::cout << "Closest point to given point on mesh: " << closest_pt << std::endl
+            << "- outside mesh: " << (outside ? "true" : "false") << std::endl
+            << "- face_id: " << face_id << std::endl;
   return sharedData.validMesh();
 }
 

@@ -58,6 +58,7 @@
 #include <vtkCellData.h>
 #include <vtkSelectPolyData.h>
 #include <vtkDijkstraGraphGeodesicPath.h>
+#include <vtkVector.h>
 
 #include <geometrycentral/surface/surface_mesh_factories.h>
 #include <geometrycentral/surface/surface_mesh.h>
@@ -304,6 +305,7 @@ Mesh &Mesh::reflect(const Axis &axis, const Vector3 &origin)
   transform->Scale(scale[0], scale[1], scale[2]);
   transform->Translate(origin[0], origin[1], origin[2]);
 
+  this->invalidateLocators();
   return invertNormals().applyTransform(transform);
 }
 
@@ -525,7 +527,7 @@ Mesh& Mesh::computeNormals()
 void Mesh::invalidateLocators() const
 {
   this->cellLocator = nullptr;
-  this->pointLocator = nullptr;  
+  this->pointLocator = nullptr;
 }
 
 void Mesh::updatePointLocator() const
@@ -544,21 +546,46 @@ void Mesh::updateCellLocator() const
   {
     this->cellLocator = vtkSmartPointer<vtkCellLocator>::New();
     this->cellLocator->SetDataSet(this->mesh);
+    this->cellLocator->BuildLocator();
   }
-  this->cellLocator->BuildLocatorIfNeeded();
 }
 
-Point3 Mesh::closestPoint(const Point3 point) const
+// TODO: add distance (I just don't want to change Mesh.h and all the tests right now)
+Point3 Mesh::closestPoint(const Point3 point, bool& outside, /*double& distance,*/ vtkIdType& face_id)
 {
   this->updateCellLocator();
 
   double dist2;
   Point3 closestPoint;
   vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
-  vtkIdType cellId;
   int subId;
 
-  cellLocator->FindClosestPoint(point.GetDataPointer(), closestPoint.GetDataPointer(), cell, cellId, subId, dist2);
+  cellLocator->FindClosestPoint(point.GetDataPointer(), closestPoint.GetDataPointer(), cell, face_id, subId, dist2);
+
+  auto cellNormals = mesh->GetCellData()->GetNormals();
+  if (!cellNormals) {
+    this->computeNormals();
+    cellNormals = mesh->GetCellData()->GetNormals();
+    if (!cellNormals || cellNormals->GetNumberOfTuples() < face_id) {
+      throw std::runtime_error("unable to compute cell normals");
+    }
+  }
+
+  if (cellNormals->GetNumberOfTuples() < face_id) {
+    throw std::runtime_error(std::string("face id (") + std::to_string(face_id)
+                             + ") is greater than number of cell normals ("
+                             + std::to_string(cellNormals->GetNumberOfTuples()));
+  }
+
+  // vec = p1 - p0 the vtk way
+  vtkVector3d pvec(point[0] - closestPoint[0],
+                   point[1] - closestPoint[1],
+                   point[2] - closestPoint[2]);
+  vtkVector3d norm(cellNormals->GetTuple3(face_id));
+  outside = pvec.Dot(norm) > 0.0;
+
+  auto distance = sqrt(dist2); // TODO: remove auto when argument is added
+
   return closestPoint;
 }
 
@@ -1230,6 +1257,7 @@ bool Mesh::splitMesh(std::vector<std::vector<Eigen::Vector3d> > boundaries, Eige
 //    std::string fnin = "dev/mesh_" + std::to_string(dom) + "_" + std::to_string(num) + "_in.vtk";
 //    this->write(fnin);
 
+  this->invalidateLocators();
   return true;
 }
 
