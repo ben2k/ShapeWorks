@@ -22,7 +22,7 @@ def Run_Pipeline(args):
     We define dataset_name which determines which dataset to download from 
     the portal and the directory to save output from the use case in. 
     """
-    dataset_name = "ellipsoid_1mode_aligned"
+    dataset_name = "ellipsoid_1mode"
     output_directory = "Output/ellipsoid_mesh/"
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
@@ -32,12 +32,12 @@ def Run_Pipeline(args):
         args.use_single_scale = 1
         sw.data.download_subset(args.use_case, dataset_name, output_directory)
         mesh_files = sorted(glob.glob(output_directory +
-                            dataset_name + "/meshes/*.ply"))[:3]
+                            dataset_name + "/meshes/*.vtk"))[:3]
     # else download the entire dataset
     else:
         sw.data.download_and_unzip_dataset(dataset_name, output_directory)
         mesh_files = sorted(glob.glob(output_directory +
-                            dataset_name + "/meshes/*.ply"))
+                            dataset_name + "/meshes/*.vtk"))
 
         # Select data if using subsample
         if args.use_subsample:
@@ -45,9 +45,84 @@ def Run_Pipeline(args):
             sample_idx = sw.data.sample_meshes(inputMeshes, int(args.num_subsample))
             mesh_files = [mesh_files[i] for i in sample_idx]
 
-    # This dataset is prealigned and does not require any grooming steps.
+    # If skipping grooming, use the pregroomed meshes from the portal
+    if args.skip_grooming:
+        print("Skipping grooming.")
+        out_directory = output_directory + dataset_name + '/groomed/meshes/'
+        indices = []
+        if args.tiny_test:
+            indices = [0, 1, 2]
+        elif args.use_subsample:
+            indices = sample_idx
+        mesh_files = sw.data.get_file_list(
+            out_directory, ending=".vtk", indices=indices)
 
-    print("\nStep 2. Optimize - Particle Based Optimization\n")
+    # Else groom the segmentations and get distance transforms for optimization
+    else:
+        print("\nStep 2. Groom - Data Pre-processing\n")
+        """
+        Step 2: GROOMING 
+        
+        The required grooming steps are: 
+        1.. Reference selection
+        2.. Rigid Alignment
+
+        For more information on grooming see docs/workflow/groom.md
+        http://sciinstitute.github.io/ShapeWorks/workflow/groom.html
+        """
+
+        # Create a directory for groomed output
+        groom_dir = output_directory + 'groomed/'
+        if not os.path.exists(groom_dir):
+            os.makedirs(groom_dir)
+
+        """
+        First, we need to loop over the shape segmentation files and load the segmentations
+        """
+        # list of shape segmentations
+        shape_list = []
+        # list of shape names (shape files prefixes) to be used for saving outputs
+        shape_names = []
+        for shape_filename in mesh_files:
+            print('Loading: ' + shape_filename)
+            # get current shape name
+            shape_names.append(shape_filename.split('/')
+                               [-1].replace('.nrrd', ''))
+            # load segmentation
+            shape_mesh = sw.Mesh(shape_filename)
+            # append to the shape list
+            shape_list.append(shape_mesh)
+
+        """
+        Grooming Step 1: Select a reference
+        This step requires loading all of the meshes at once so the shape
+        closest to the mean can be found and selected as the reference. 
+        """
+        ref_index = sw.find_reference_mesh_index(shape_list)
+        # Make a copy of the reference segmentation
+        ref_mesh = shape_list[ref_index].write(groom_dir + 'reference.vtk')
+        ref_name = shape_names[ref_index]
+        print("Reference found: " + ref_name)
+
+        """
+        Grooming Step 2: Rigid alignment
+        This step rigidly aligns each shape to the selected reference. 
+        """
+        # Loop through all the segmentations and apply rigid alignment
+        for shape_mesh, shape_name in zip(shape_list, shape_names):
+            print('Aligning ' + shape_name + ' to ' + ref_name)
+            # compute rigid transformation
+            rigidTransform = shape_mesh.createTransform(ref_mesh, sw.TransformType.IterativeClosestPoint, 
+                                sw.Mesh.AlignmentType.Similarity, 10)
+            # apply the computed transformation
+            shape_mesh.applyTransform(rigidTransform)
+
+        # Save groomed meshes
+        mesh_files = sw.utils.save_meshes(groom_dir + 'meshes/', shape_list,
+                        shape_names, extension='vtk', compressed=False, verbose=True)
+
+
+    print("\nStep 3. Optimize - Particle Based Optimization\n")
     """
     Step 2: OPTIMIZE - Particle Based Optimization
 
