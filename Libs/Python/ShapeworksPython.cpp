@@ -1208,6 +1208,12 @@ PYBIND11_MODULE(shapeworks_py, m)
 
   .def("D",
        &ParticleSystem::D)
+
+  .def("ExactCompare",
+       &ParticleSystem::ExactCompare)
+
+  .def("EvaluationCompare",
+       &ParticleSystem::EvaluationCompare)
   ;
 
   // ShapeEvaluation
