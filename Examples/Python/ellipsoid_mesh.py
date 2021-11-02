@@ -57,15 +57,15 @@ def Run_Pipeline(args):
         mesh_files = sw.data.get_file_list(
             out_directory, ending=".vtk", indices=indices)
 
-    # Else groom the segmentations and get distance transforms for optimization
+    # Else groom the meshes for optimization
     else:
         print("\nStep 2. Groom - Data Pre-processing\n")
         """
         Step 2: GROOMING 
         
         The required grooming steps are: 
-        1.. Reference selection
-        2.. Rigid Alignment
+        1. Reference selection
+        2. Rigid Alignment
 
         For more information on grooming see docs/workflow/groom.md
         http://sciinstitute.github.io/ShapeWorks/workflow/groom.html
