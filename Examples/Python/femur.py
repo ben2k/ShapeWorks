@@ -99,10 +99,8 @@ def Run_Pipeline(args):
         if not os.path.exists(groom_dir):
             os.makedirs(groom_dir)
 
-        # Set reference side
-        ref_side = "R" # selected so there are less to reflect
-        if args.tiny_test:
-            ref_side = "L" # selected so reflection happens in tiny test
+        # Set reference side (arbitrary)
+        ref_side = "L" # chosen so reflection happens in tiny test
 
         """
         To begin grooming, we need to loop over the files and load the meshes and images
@@ -139,6 +137,7 @@ def Run_Pipeline(args):
                             names, extension='vtk', compressed=False, verbose=True)
 
         # Get alignment transforms
+        print("\nFinding initial alignment transforms.")
         reflections = []
         COM_translations = []
         for clipped_mesh, name in zip(clipped_mesh_list, names):
@@ -146,24 +145,23 @@ def Run_Pipeline(args):
             Grooming Step 2: Get reflection transform - We have left and right femurs, so we reflect the non-reference side
             meshes so that all of the femurs can be aligned.
             """
+            print("Finding reflection transform for: " + name)
             if ref_side in name:
-                print("\nFinding reflection transform for: " + name)
                 reflection = np.eye(4)
                 reflection[0][0] = -1 # Reflect across X
-                clipped_mesh.reflect(sw.X)
+                clipped_mesh.applyTransform(reflection)
             else:
                 reflection = np.eye(4) # Identity  
             reflections.append(reflection)
 
             """
             Grooming Step 3: center of alignment
-            Prep for rigidly alignment by translating center of mass to [0,0,0]
+            Prep for rigid alignment by translating center of mass to [0,0,0]
             """
             print('Finding COM alignment transform ' + name)
             translation = np.eye(4)
-            translation[-1,0:3] = clipped_mesh.centerOfMass()
-            clipped_mesh.translate(-clipped_mesh.centerOfMass())
-            # clipped_mesh.applyTransform(translation).write('COM.vtk') #TODO check when working
+            translation[0:3,-1] = -clipped_mesh.centerOfMass()
+            clipped_mesh.applyTransform(translation)
             COM_translations.append(translation)
 
         """
@@ -171,10 +169,11 @@ def Run_Pipeline(args):
         This step requires breaking the loop to load all of the shapes at once so the shape
         closest to the mean can be found and selected as the reference.
         """
+        print("\nFinding reference.")
         ref_index = sw.find_reference_mesh_index(clipped_mesh_list)
         ref_clipped_mesh = clipped_mesh_list[ref_index].write(groom_dir + 'reference.vtk')
         ref_name = names[ref_index]
-        print("\nReference found: " + ref_name)
+        print("Reference found: " + ref_name + "\n")
 
         """
         Grooming Step 4: Rigid alignment
@@ -183,58 +182,46 @@ def Run_Pipeline(args):
         rigid_transforms = []
         for clipped_mesh, name in zip(clipped_mesh_list, names):
             print('Finding alignment transform from ' + name + ' to ' + ref_name)
-            # # TODO uncomment when working
-            # rigid_transform = clipped_mesh.createTransform(ref_clipped_mesh, 
-            #                     sw.TransformType.IterativeClosestPoint, 
-            #                     sw.Mesh.AlignmentType.Similarity, 10)
-            # rigid_transforms.append(rigid_transform)
-            rigid_transforms.append(np.eye(4))
-
+            rigid_transform = clipped_mesh.createTransform(ref_clipped_mesh, sw.Mesh.AlignmentType.Rigid)
+            clipped_mesh.applyTransform(rigid_transform)
+            rigid_transforms.append(rigid_transform)
     
+        """
+        Groom images
+        """
         if args.groom_images:
-            """
-            Groom images
-            """
-            print("\nBeginning grooming images.")
+
+            # Load corresponding images
+            print("\nLoading images.")
             image_list = []
-            bounding_box = sw.MeshUtils.boundingBox(clipped_mesh_list).pad(2)
-            for name, reflection, COM_translation, rigid_transform in zip(names, reflections, COM_translations, rigid_transforms):
+            for name in names:
                 # Get corresponding image path
                 prefix = name.split("_")[0]
                 for index in range(len(image_files)):
                     if prefix in image_files[index]:
                         corresponding_image_file = image_files[index]
                         break
-
-                print('Loading image: ' + corresponding_image_file)
+                print('Loading image: ' + name)
                 image = sw.Image(corresponding_image_file)
                 image_list.append(image)
-                
+
+            # Apply transforms to images
+            bounding_box = sw.MeshUtils.boundingBox(clipped_mesh_list)
+            print(bounding_box)
+            for image, name, reflection, COM_translation, rigid_transform in zip(image_list, names, reflections, COM_translations, rigid_transforms):
+                print("\nGrooming image: " + name)
                 print("Reflecting image: " + name)
-                translate = np.eye(4)  
-                translate[0:3,-1] = -image.center()
-                translate_back = np.eye(4) 
-                translate_back[0:3,-1] = image.origin()
-                reflection_transform = np.matmul(np.matmul(translate, reflection), translate_back)
-                image.applyTransform(reflection_transform)
-
+                image.applyTransform(reflection)
                 print("Translating image: " + name)
-                image.setOrigin(image.origin() - COM_translation[-1,0:3])
-
-            ref_image = image_list[ref_index]
-            for image, name, rigid_transform in zip(image_list, names, rigid_transforms):
+                image.setOrigin(image.origin() + COM_translation[0:3,-1])
                 print("Aligning image: " + name)
-                image.applyTransform(rigid_transform,
-                                     ref_image.origin(),  ref_image.dims(),
-                                     ref_image.spacing(), ref_image.coordsys(),
-                                     sw.InterpolationType.Linear)
-                
+                image.applyTransform(rigid_transform)
                 print('Cropping image: ' + name)
-                image.crop(bounding_box)  
+                image.crop(bounding_box)
 
             # Write images
             print("\nWriting groomed images.")
-            image_files = sw.utils.save_meshes(groom_dir + 'images/', image_list,
+            image_files = sw.utils.save_images(groom_dir + 'images/', image_list,
                             names, extension='nrrd', compressed=True, verbose=True)
 
         # TODO remove
@@ -258,7 +245,7 @@ def Run_Pipeline(args):
     if not os.path.exists(point_dir):
         os.makedirs(point_dir)
     # Create a dictionary for all the parameters required by optimization
-        parameter_dictionary = {
+    parameter_dictionary = {
         "number_of_particles": 512,
         "use_normals": 0,
         "normal_weight": 10.0,
