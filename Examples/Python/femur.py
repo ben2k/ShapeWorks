@@ -19,7 +19,6 @@ def Run_Pipeline(args):
     print("\nStep 1. Extract Data\n")
     """
     Step 1: EXTRACT DATA
-
     We define dataset_name which determines which dataset to download from
     the portal and the directory to save output from the use case in.
     This data is comprised of femur meshes and corresponding unsegmented hip CT scans.
@@ -83,7 +82,6 @@ def Run_Pipeline(args):
         print("\nStep 2. Groom - Data Pre-processing\n")
         """
         Step 2: GROOMING
-
         The required grooming steps are:
         1. Apply smoothing and decimation to meshes (Save groomed meshes)
         2. Create a clipped version of meshes
@@ -92,7 +90,6 @@ def Run_Pipeline(args):
         5. Select reference mesh from clipped meshes
         6. Find rigid alignment transform using clipped transform w.r.t reference mesh (Save Rigid Transform)
         Option to groom corresponding images (includes applying transforms)
-
         For more information on grooming see docs/workflow/groom.md
         http://sciinstitute.github.io/ShapeWorks/workflow/groom.html
         """
@@ -249,7 +246,6 @@ def Run_Pipeline(args):
     # TODO pass transforms
     """
     Step 3: OPTIMIZE - Particle Based Optimization
-
     Now that we have the distance transform representation of data we create 
     the parameter files for the shapeworks particle optimization routine.
     For more details on the plethora of parameters for shapeworks please refer 
@@ -304,7 +300,6 @@ def Run_Pipeline(args):
     print("\nStep 4. Analysis - Launch ShapeWorksStudio - sparse correspondence model.\n")
     """
     Step 4: ANALYZE - Shape Analysis and Visualization
-
     Now we launch studio to analyze the resulting shape model.
     For more information about the analysis step, see docs/workflow/analyze.md
     http://sciinstitute.github.io/ShapeWorks/workflow/analyze.html
