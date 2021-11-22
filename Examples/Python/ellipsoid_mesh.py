@@ -10,6 +10,7 @@ aligned ellipsoid meshes.
 import os
 import glob
 import shapeworks as sw
+import numpy as np
 import OptimizeUtils
 import AnalyzeUtils
 
@@ -83,6 +84,7 @@ def Run_Pipeline(args):
         shape_list = []
         # list of shape names (shape files prefixes) to be used for saving outputs
         shape_names = []
+        COM_translations = []
         for shape_filename in mesh_files:
             print('Loading: ' + shape_filename)
             # get current shape name
@@ -90,6 +92,11 @@ def Run_Pipeline(args):
                                [-1].replace('.nrrd', ''))
             # load segmentation
             shape_mesh = sw.Mesh(shape_filename)
+
+            translation = np.eye(4)
+            translation[0:3,-1] = -shape_mesh.centerOfMass()
+            shape_mesh.applyTransform(translation)
+            COM_translations.append(translation)
             # append to the shape list
             shape_list.append(shape_mesh)
 
@@ -109,17 +116,20 @@ def Run_Pipeline(args):
         This step rigidly aligns each shape to the selected reference. 
         """
         # Loop through all the segmentations and apply rigid alignment
+        transforms = []
         for shape_mesh, shape_name in zip(shape_list, shape_names):
             print('Aligning ' + shape_name + ' to ' + ref_name)
             # compute rigid transformation
-            rigidTransform = shape_mesh.createTransform(ref_mesh, sw.TransformType.IterativeClosestPoint, 
-                                sw.Mesh.AlignmentType.Similarity, 10)
-            # apply the computed transformation
+            rigidTransform = shape_mesh.createTransform(ref_mesh, sw.Mesh.AlignmentType.Rigid)
+            transforms.append(rigidTransform)
+            # TODO: remove apply the computed transformation
             shape_mesh.applyTransform(rigidTransform)
 
-        # Save groomed meshes
+        # TODO: remove Save groomed meshes
         mesh_files = sw.utils.save_meshes(groom_dir + 'meshes/', shape_list,
                         shape_names, extension='vtk', compressed=False, verbose=True)
+
+    # Todo: pass transforms to optimizer
 
 
     print("\nStep 3. Optimize - Particle Based Optimization\n")
